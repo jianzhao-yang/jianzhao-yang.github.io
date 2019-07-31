@@ -7,24 +7,38 @@
   <meta name="description" content="Description">
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <!-- 四种页面主题,按需选择 -->
-  <!-- <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css"> -->
-  <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/buble.css">
+  <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css">
+  <!-- <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/buble.css"> -->
   <!-- <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/dark.css"> -->
   <!-- <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/pure.css"> -->
 </head>
 <body>
   <div id="app"></div>
-  <script>
+  <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+
+   <script>
     window.$docsify = {
       name: '',
-      repo: '',
+      basePath: '/books/',
+      repo: 'https://github.com/jianzhao-yang/jianzhao-yang.github.io',
       // 是否加载侧边栏
       loadSidebar: true,
-      // 侧边栏最大层级
-      subMaxLevel: 2
+        // 侧边栏最大层级
+      subMaxLevel: 2,
+      alias: {
+        '/.*/_sidebar.md': '/_sidebar.md'
+      },
+      // 配置插件
+      plugins: [
+     // EditOnGithubPlugin.create(docBase, docEditBase, title) // 在github上编辑当前页面
+      ]
     }
   </script>
-  <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+
+  <!-- 下面都是插件 -->
+
+  <!-- // 在github上编辑当前页面的插件 [暂时没搞明白咋用] -->
+  <!-- <script src="//unpkg.com/docsify-edit-on-github/index.js"></script> -->
   <!-- 分页插件 -->
   <script src="//unpkg.com/docsify-pagination/dist/docsify-pagination.min.js"></script>
   <!-- 代码复制插件 -->
