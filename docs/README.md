@@ -4,6 +4,12 @@
 
 ​				https://crossoverjie.top/JCSprout/
 
-​				https://snailclimb.top/JavaGuide/
+​				https://snailclimb.gitee.io/javaguide/#/
 
-> 本文档使用docsify(https://docsify.js.org/#/zh-cn)支持,
+### · 线程
+
+​				[什么是线程安全?](https://www.jianshu.com/p/fc61770094a4)
+
+
+
+> 本网站使用 [docsify](https://docsify.js.org/#/zh-cn) 渲染
