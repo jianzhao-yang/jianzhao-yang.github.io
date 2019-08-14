@@ -1,2 +1,3 @@
 * [首页](/)
-* [git](/git-learn)
+* [git](/it/git-learn)
+
