@@ -435,7 +435,7 @@
 
 210. [JVM调优总结](https://www.cnblogs.com/andy-zhou/p/5327288.html)
 
-### - [Java8新特性]([https://snailclimb.gitee.io/javaguide/#/java/What's%20New%20in%20JDK8/Java8Tutorial](https://snailclimb.gitee.io/javaguide/#/java/What's New in JDK8/Java8Tutorial))
+### - [Java8新特性](https://snailclimb.gitee.io/javaguide/#/java/What's%20New%20in%20JDK8/Java8Tutorial)
 
 ## Web
 
