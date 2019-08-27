@@ -333,7 +333,7 @@
 
     - 不建议： apache commons BeanUtils.copyProperties
 - 建议： Spring BeanUtils.copyProperties
-    
+  
 64. 深拷贝和浅拷贝区别是什么？
 
     · 浅拷贝---能复制变量，如果对象内还有对象，则只能复制对象的地址
@@ -387,10 +387,10 @@
      - 实例数据： 用来存储对象真正的有效信息（包括父类继承下来的和自己定义的）
      - 对齐填充：JVM要求对象起始地址必须是8字节的整数倍（8字节对齐）
 
-196.  Java对象的定位方式？
+196. Java对象的定位方式？
 
-- 句柄池、直接指针。
-  
+     - 句柄池、直接指针。
+
 197. 创建对象的步骤？
 
      - **类加载机制检查**：首先检查是否已加载对应的lass类
@@ -399,50 +399,9 @@
      - **设置对象头：**存储对象自身的运行时数据，类型指针
      - **执行<init>**：为对象的字段赋值
 
-198. 说一下 jvm 运行时数据区？
+198. 说一下类加载的执行过程？
 
-     · [JVM运行时数据区和Java内存模型](https://www.jianshu.com/p/2cdd069a4d5f)
-
-199. 什么是符合引用？什么是直接引用？
-
-     - 符号引用以一组符号来描述所引用的目标，符号可以是任何形式的字面量，只要使用时能够无歧义的定位到目标即可。主要是因为在编译时无法确定依赖对象的实际内存地址，只能使用符合引用指代
-
-     - 直接引用： 
-
-       （1）直接指向目标的指针（比如，指向“类型”【Class对象】、类变量、类方法的直接引用可能是指向方法区的指针）
-
-       （2）相对偏移量（比如，指向实例变量、实例方法的直接引用都是偏移量）
-
-       （3）一个能间接定位到目标的句柄
-
-200. 说一下堆栈的区别？
-
-     · 堆是所有线程共享一个的，栈是每个线程都有一个的
-
-     · 堆用来存放对象和数组，栈用来存放方法和局部变量
-
-201. 队列和栈是什么？有什么区别？
-
-     · 队列先进先出，栈先进后出
-
-     · 队列遍历速度更快
-
-202. 什么是双亲委派模型？
-
-     ![类加载器结构](/images/classloader.png)
-
-     - Bootstrap ClassLoader： 负责加载<JAVA_HOME>/lib/rt.jar
-
-     - Extension ClassLoader: 负责加载<JAVA_HOME>/lib/ext下的jar
-     - Application ClassLoader： 负责加载classpath下的class
-
-     先是自下而上的请求父类加载，再自上而下的尝试加载
-
-     [为什么说java spi破坏双亲委派模型？](https://www.zhihu.com/question/49667892?sort=created)
-
-203. 说一下类加载的执行过程？
-
-     ![类加载过程](/images/load.png)
+     ![类加载过程](E:/project/github/jianzhao-yang.github.io/docs/it/images/load.png)
 
      - 加载，查找并加载类的二进制数据，在Java堆中也创建一个java.lang.Class类的对象
      - 连接，连接又包含三块内容：验证、准备、初始化。 
@@ -454,6 +413,47 @@
      - 卸载，执行垃圾回收
 
      [深入浅出Java类加载过程](https://www.cnblogs.com/luohanguo/p/9469851.html)
+
+199. 说一下 jvm 运行时数据区？
+
+     · [JVM运行时数据区和Java内存模型](https://www.jianshu.com/p/2cdd069a4d5f)
+
+200. 什么是符号引用？什么是直接引用？
+
+     - 符号引用以一组符号来描述所引用的目标，符号可以是任何形式的字面量，只要使用时能够无歧义的定位到目标即可。主要是因为在编译时无法确定依赖对象的实际内存地址，只能使用符合引用指代
+
+     - 直接引用： 
+
+       （1）直接指向目标的指针（比如，指向“类型”【Class对象】、类变量、类方法的直接引用可能是指向方法区的指针）
+
+       （2）相对偏移量（比如，指向实例变量、实例方法的直接引用都是偏移量）
+
+       （3）一个能间接定位到目标的句柄
+
+201. 说一下堆栈的区别？
+
+     · 堆是所有线程共享一个的，栈是每个线程都有一个的
+
+     · 堆用来存放对象和数组，栈用来存放方法和局部变量
+
+202. 队列和栈是什么？有什么区别？
+
+     · 队列先进先出，栈先进后出
+
+     · 队列遍历速度更快
+
+203. 什么是双亲委派模型？
+
+     ![类加载器结构](/images/classloader.png)
+
+     - Bootstrap ClassLoader： 负责加载<JAVA_HOME>/lib/rt.jar
+
+     - Extension ClassLoader: 负责加载<JAVA_HOME>/lib/ext下的jar
+     - Application ClassLoader： 负责加载classpath下的class
+
+     先是自下而上的请求父类加载，再自上而下的尝试加载
+
+     [为什么说java spi破坏双亲委派模型？](https://www.zhihu.com/question/49667892?sort=created)
 
 204. 怎么判断对象是否可以被回收？
 
@@ -495,7 +495,17 @@
 
 205. 新生代垃圾回收器和老生代垃圾回收器都有哪些？有什么区别？
 
-206. 简述分代垃圾回收器是怎么工作的？
+206. GC时的内存担保机制？
+
+     - 在发生minor gc之前，虚拟机会检测 : 老年代最大可用的连续空间>新生代all对象总空间？
+     
+207. 满足，minor gc是安全的，可以进行minor gc。
+
+2. 不满足，虚拟机查看HandlePromotionFailure参数：
+   （1）为true，允许担保失败，会继续检测老年代最大可用的连续空间>历次晋升到老年代对象的平均大小。若大                           于，将尝试进行一次minor gc，若失败，则重新进行一次full gc。
+   
+   （2）为false，则不允许冒险，要进行full gc（对老年代进行gc）。
+207. 简述分代垃圾回收器是怎么工作的？
 
      · 对象出生在新生代Eden，Eden不足时进行minorGC，将存活对象转移到S1，同时年龄+1；
 
@@ -505,9 +515,9 @@
 
      · 新生代GC内存不足触发对象晋升，对象晋升老年代内存不足触发老年代GC
 
-207. [JVM中的STW和CMS](https://www.cnblogs.com/williamjie/p/9222839.html)
+208. [JVM中的STW和CMS](https://www.cnblogs.com/williamjie/p/9222839.html)
 
-208. 说一下 jvm 调优的工具？
+209. 说一下 jvm 调优的工具？
 
      · Windows：JVisualVM 工具集
 
@@ -517,25 +527,21 @@
 
      · jmap 用来查看堆内存使用状况
 
+     · jhat 用于分析jmap导出的堆栈信息
+
      · jstat: 看看各个区内存和GC的情况
 
-209. 常用的 jvm 调优的参数都有哪些？
+210. 常用的 jvm 调优的参数都有哪些？
 
      https://cloud.tencent.com/developer/article/1198524
 
-210. [JVM调优总结](https://www.cnblogs.com/andy-zhou/p/5327288.html)
+211. [JVM调优总结](https://www.cnblogs.com/andy-zhou/p/5327288.html)
 
 ### - [Java8新特性](https://snailclimb.gitee.io/javaguide/#/java/What's%20New%20in%20JDK8/Java8Tutorial)
 
 ## Web
 
 ### - Java Web
-
-64. jsp 和 servlet 有什么区别？
-
-65. jsp 有哪些内置对象？作用分别是什么？
-
-66. 说一下 jsp 的 4  种作用域？
 
 67. session 和 cookie 有什么区别？
 
@@ -549,16 +555,14 @@
 
     · 不能，没有sessionId就无法找到对应session
 
-    · 可以**通过其他方法**在禁用 cookie 的情况下，可以继续使用session：
+    · 可以通过其他方法在禁用 cookie 的情况下，可以继续使用session：
 
     1. 使用url保存sessionId
 
     	2. 使用header保存sessionId
      	3. 每次返回时以参数的形式返回sessionId
 
-70. spring mvc 和 struts 的区别是什么？
-
-71. 如何避免 sql 注入？
+70. 如何避免 sql 注入？
 
     · 使用PreparedStatement
 
@@ -574,7 +578,11 @@
 
 73. 什么是 CSRF 攻击，如何避免？
 
-    ·跨站请求伪造，在另一个网站的网页下伪造表单提交到被攻击的网站（利用了浏览器cookie共享的机制获取登录态） 
+    · 跨站请求伪造，在另一个网站的网页下伪造表单提交到被攻击的网站（利用了浏览器cookie共享的机制获取登录态）
+    
+    · 校验请求的referer
+    
+    · 表单中存储隐藏令牌 
 
 ### - 网络
 
@@ -834,52 +842,47 @@
 125. mybatis 中 #{}和 ${}的区别是什么？
 
      - #{}是预编译处理,${}是字符串替换
-
-126. mybatis 有几种分页方式？
-
+126. mybatis执行流程？
+1. 返回创建SqlSessionFactory对象
+     2. 返回SqlSession的实现类DefaultSqlSession对象
+     3. 返回一个MapperProxy的代理对象
+     4.  执行CRUD流程。
+127. mybatis 有几种分页方式？
      - limit
      - query(String userName, RowBounds rowBounds)
      - 实现拦截器
      - PageHelper
-
-127. RowBounds 是一次性查询全部结果吗？为什么？
+128. RowBounds 是一次性查询全部结果吗？为什么？
 
      - RowBounds是一次性查询全部结果
      - 从RowBounds源码看出，RowBounds最大数据量为Integer.MAX_VALUE(2147483647)
-
-128. mybatis 逻辑分页和物理分页的区别是什么？
+129. mybatis 逻辑分页和物理分页的区别是什么？
 
      - 逻辑分页,全部数据查到内存后再处理
 
      - 物理分页,直接使用limit关键字,在获取的时候就分页
-
-129. mybatis 是否支持延迟加载？延迟加载的原理是什么？
+130. mybatis 是否支持延迟加载？延迟加载的原理是什么？
 
      - 延迟加载即当sql为一对一/一对多关联时,关联数据只有在使用的时候才查出来
      - 支持,设置lazyLoadingEnabled=true 即可
      - 原理是返回的对象是cglib生成的子类,调用相关子对象时会被拦截,再去查询
-
-130. 说一下 mybatis 的一级缓存和二级缓存？
+131. 说一下 mybatis 的一级缓存和二级缓存？
 
      - 一级缓存基于SqlSession
      - 二级缓存基于namespace
-
-131. mybatis 和 hibernate 的区别有哪些？
+132. mybatis 和 hibernate 的区别有哪些？
 
      - 
-
-132. mybatis 有哪些执行器（Executor）？
+133. mybatis 有哪些执行器（Executor）？
 
      - SimpleExecutor：每执行一次update或select，就开启一个Statement对象，用完立刻关闭Statement对象
      - ReuseExecutor：重复使用Statement对象
      - BatchExecutor：执行update（没有select，JDBC批处理不支持select），将所有sql都添加到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个Statement对象，每个Statement对象都是addBatch()完毕后，等待逐一执行executeBatch()批处理。与JDBC批处理相同。
-
-133. mybatis 分页插件的实现原理是什么？
+134. mybatis 分页插件的实现原理是什么？
 
      - PageHelper通过`ThreadLocal`来存放分页信息，从而可以做到在Service层实现无侵入性的Mybatis分页实现
      - [MyBatis之分页插件(PageHelper)工作原理](https://www.cnblogs.com/dengpengbo/p/10579631.html)
-
-134. mybatis 如何编写一个自定义插件？
+135. mybatis 如何编写一个自定义插件？
 
      - 
 
@@ -961,13 +964,20 @@
 
      - ![](images\mysqlengine.png)
 
-178. 说一下 mysql 的行锁和表锁？
+178. mysql表分区？
 
-179. 说一下乐观锁和悲观锁？
+     - 表分区： 将表在一个数据库中分为多个分区表，以提高查询效率
+     - 分区方式：range、list、hash、linear hash、key、columns
+     - 分区关键字： partition、subpartition
+     - 分区时null的处理：MYSQL不禁止在分区键值上使用NULL，在RANGE分区中，NULL值会被当做最小值来处理；LIST分区中，NULL值必须出现在枚举列表中，否则不被接受；HASH/KEY分区中，NULL值会被当做零值来处理。
 
-180. mysql 问题排查都有哪些手段？
+179. 说一下 mysql 的行锁和表锁？
 
-181. 如何做 mysql 的性能优化？
+180. 说一下乐观锁和悲观锁？
+
+181. mysql 问题排查都有哪些手段？
+
+182. 如何做 mysql 的性能优化？
 
 ### - Redis
 
