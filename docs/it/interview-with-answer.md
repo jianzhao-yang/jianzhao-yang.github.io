@@ -161,7 +161,7 @@
 
 47. 线程池中 submit()和 execute()方法有什么区别？
 
-    · submit()方法，可以提供Future < T > 类型的返回值；executor()方法，无返回值
+    · submit()方法，可以提供Future < T > 类型的返回值；execut()方法，无返回值
 
     · excute方法会抛出异常；sumbit方法不会抛出异常。除非调用Future.get()
 
@@ -194,6 +194,13 @@
 
     · [死锁](https://www.cnblogs.com/bopo/p/9228834.html)
 
+    - 四个必要条件 ：
+
+    - 互斥条件：一个资源每次只能被一个进程使用，即在一段时间内某 资源仅为一个进程所占有。此时若有其他进程请求该资源，则请求进程只能等待。
+    - 请求与保持条件：进程已经保持了至少一个资源，但又提出了新的资源请求，而该资源 已被其他进程占有，此时请求进程被阻塞，但对自己已获得的资源保持不放。
+    - 不可剥夺条件: 进程所获得的资源在未使用完毕之前，不能被其他进程强行夺走，即只能 由获得该资源的进程自己来释放（只能是主动释放)。
+    - 循环等待条件: 若干进程间形成首尾相接循环等待资源的关系
+
 51. ThreadLocal 是什么？有哪些使用场景？
 
     · ThreadLocal是一种解决并发问题的思路，即为每个线程都创建一个新的副本，从而保证线程间不会互相干扰
@@ -216,9 +223,43 @@
     · 获取锁成功是否可知。synchronized 无法得知是否获取锁成功；Lock 可以通过 tryLock 获得加锁是否成功
     · 功能复杂性。synchronized 加锁可重入、不可中断、非公平；Lock 可重入、可判断、可公平和不公平、细分读写锁提高效率
 
-    · [ReentrantLock使用Condition进行多条件应用
+    · ReentrantLock使用Condition进行多条件应用
 
-55. [说一下 atomic 的原理？](https://www.jianshu.com/p/84c75074fa03)
+55. ReentrantLock底层实现原理？
+
+    - 实现了Lock接口，内部维护一个Sync对象，Sync是ReentrantLock各个方法真正的实现
+    - Sync是AQS（AbstractQueuedSynchronizer）的一个子类，又有两个子类NoFairSync和FairSync，分别实现了非公平锁和公平锁的方法。AQS其实没有需要实现的方法，仅仅只是类名有abstract而已
+    
+56. synchronized底层实现原理（字节码指令）？
+
+    - 字节码指令：
+      - 用在方法上：ACC_SYNCHRONIZED
+      - 用在代码块： monitorenter和monitorexit
+
+    - 对象头Mark Word
+
+    - 
+
+    - synchronized的对象锁，其指针指向的是一个monitor对象（由C++实现）的起始地址。每个对象实例都会有一个 monitor。其中monitor可以与对象一起创建、销毁；亦或者当线程试图获取对象锁时自动生成
+
+      ```c++
+      ObjectMonitor{
+      	_count = 0; //获取锁的对象个数
+          _owner = NULL; //当前获取锁的对象
+          _waitSet = NULL; // 等待池（等待被其他线程notify/notifyAll）
+          _waitSetLock = NULL; // 
+          _EntryList = NULL; //锁池（被notify/notifyAll的线程在此竞争）
+      }
+      ```
+
+      
+
+57. UnSafe为什么不安全？
+
+    - 底层是C++实现，直接使用了内存偏移，不合理的使用会导致程序运行与预期不符合
+    - 虽然在内部根据classloader进行了限制，但是仍然可以使用反射获取并进行操作
+
+58. 说一下 atomic 的原理？ https://www.jianshu.com/p/84c75074fa03
 
     · 通过UnSafe类的CAS操作保证原子性
 
@@ -288,7 +329,12 @@
 
     · 实现Cloneable接口，重写clone()方法
 
-63. 深拷贝和浅拷贝区别是什么？
+63. 最快速进行深拷贝的方法？
+
+    - 不建议： apache commons BeanUtils.copyProperties
+- 建议： Spring BeanUtils.copyProperties
+    
+64. 深拷贝和浅拷贝区别是什么？
 
     · 浅拷贝---能复制变量，如果对象内还有对象，则只能复制对象的地址
 
@@ -335,43 +381,87 @@
 
      ![jvm](images\jvm.png)
 
-195. 说一下 jvm 运行时数据区？
+195. 对象结构？
+
+     - 对象头： 由两部分组成，第一部分存储对象自身的运行时数据：哈希码、GC分代年龄、锁标识状态、线程持有的锁、偏向线程ID（一般占32/64 bit）。第二部分是指针类型，指向对象的类元数据类型（即对象代表哪个类）。如果是数组对象，则对象头中还有一部分用来记录数组长度。
+     - 实例数据： 用来存储对象真正的有效信息（包括父类继承下来的和自己定义的）
+     - 对齐填充：JVM要求对象起始地址必须是8字节的整数倍（8字节对齐）
+
+196.  Java对象的定位方式？
+
+- 句柄池、直接指针。
+  
+197. 创建对象的步骤？
+
+     - **类加载机制检查**：首先检查是否已加载对应的lass类
+     - **分配内存**：采用指针碰撞、空闲列表或TLAB进行分配
+     - **初始化零值：**对象的实例字段不需要赋初始值也可以直接使用其默认零值，就是这里起得作用
+     - **设置对象头：**存储对象自身的运行时数据，类型指针
+     - **执行<init>**：为对象的字段赋值
+
+198. 说一下 jvm 运行时数据区？
 
      · [JVM运行时数据区和Java内存模型](https://www.jianshu.com/p/2cdd069a4d5f)
 
-196. 说一下堆栈的区别？
+199. 什么是符合引用？什么是直接引用？
+
+     - 符号引用以一组符号来描述所引用的目标，符号可以是任何形式的字面量，只要使用时能够无歧义的定位到目标即可。主要是因为在编译时无法确定依赖对象的实际内存地址，只能使用符合引用指代
+
+     - 直接引用： 
+
+       （1）直接指向目标的指针（比如，指向“类型”【Class对象】、类变量、类方法的直接引用可能是指向方法区的指针）
+
+       （2）相对偏移量（比如，指向实例变量、实例方法的直接引用都是偏移量）
+
+       （3）一个能间接定位到目标的句柄
+
+200. 说一下堆栈的区别？
 
      · 堆是所有线程共享一个的，栈是每个线程都有一个的
 
      · 堆用来存放对象和数组，栈用来存放方法和局部变量
 
-197. 队列和栈是什么？有什么区别？
+201. 队列和栈是什么？有什么区别？
 
      · 队列先进先出，栈先进后出
 
      · 队列遍历速度更快
 
-198. 什么是双亲委派模型？
+202. 什么是双亲委派模型？
 
      ![类加载器结构](/images/classloader.png)
 
-     · 先是自下而上的请求父类加载，再自上而下的尝试加载
+     - Bootstrap ClassLoader： 负责加载<JAVA_HOME>/lib/rt.jar
+
+     - Extension ClassLoader: 负责加载<JAVA_HOME>/lib/ext下的jar
+     - Application ClassLoader： 负责加载classpath下的class
+
+     先是自下而上的请求父类加载，再自上而下的尝试加载
 
      [为什么说java spi破坏双亲委派模型？](https://www.zhihu.com/question/49667892?sort=created)
 
-199. 说一下类加载的执行过程？
+203. 说一下类加载的执行过程？
 
      ![类加载过程](/images/load.png)
 
+     - 加载，查找并加载类的二进制数据，在Java堆中也创建一个java.lang.Class类的对象
+     - 连接，连接又包含三块内容：验证、准备、初始化。 
+       - 1）验证，文件格式、元数据、字节码、符号引用验证； 
+       - 2）准备，为类的静态变量分配内存，并将其初始化为默认值； 
+       - 3）解析，把类中的符号引用转换为直接引用
+     - 初始化，为类的静态变量赋予正确的初始值
+     - 使用，new出对象程序中使用
+     - 卸载，执行垃圾回收
+
      [深入浅出Java类加载过程](https://www.cnblogs.com/luohanguo/p/9469851.html)
 
-200. 怎么判断对象是否可以被回收？
+204. 怎么判断对象是否可以被回收？
 
      · 根据GCRoots进行可达性分析，不可达即可回收
 
      · GCRoots:栈中引用的对象、静态属性引用的对象、常量池中引用的对象
 
-201. java 中都有哪些引用类型？
+205. java 中都有哪些引用类型？
 
      · 强引用：正常引用
 
@@ -383,7 +473,7 @@
 
      · [四种引用类型](https://www.cnblogs.com/liyutian/p/9690974.html)
 
-202. 说一下 jvm 有哪些垃圾回收算法？
+206. 说一下 jvm 有哪些垃圾回收算法？
 
      · 分代回收算法
 
@@ -587,24 +677,45 @@
     - 面向切面编程 AOP
     - 方便集成其他框架
     - 声明式事务
+91. 单例对象的创建过程？
+    - （1）createBeanInstance：实例化，其实也就是调用对象的构造方法实例化对象
+    - （2）populateBean：填充属性，这一步主要是多bean的依赖属性进行填充
+    - （3）initializeBean：调用spring xml中的init 方法。
 
-91. 解释一下什么是 aop？
+90. Spring循环依赖问题怎么解决？
+
+    - 三级缓存
+      - singletonFactories ： 单例对象工厂的cache 
+      - earlySingletonObjects ：提前暴光的单例对象的Cache 
+      - singletonObjects：单例对象的cache
+    - 在创建bean的时候，首先想到的是从cache中获取这个单例的bean，这个缓存就是singletonObjects。如果获取不到，并且对象正在创建中，就再从二级缓存earlySingletonObjects中获取。如果还是获取不到且允许singletonFactories通过getObject()获取，就从三级缓存singletonFactory.getObject()(三级缓存)获取，如果获取到了则：从singletonFactories中移除，并放入earlySingletonObjects中。其实也就是从三级缓存移动到了二级缓存。
+
+91. BeanFactory和FactoryBean的区别？
+
+    - BeanFactory： 它是一个工厂类，用于管理Bean的一个工厂；在Spring中，所有的Bean都是由BeanFactory(也就是IOC容器)来进行管理的
+    - FactoryBean： 是一个能生产或者修饰对象生成的工厂Bean；用户可以通过实现该接口定制实例化Bean的逻辑；这种bean需要使用getBean("&beanName");的形式获取bean
+
+92. Spring启动流程？
+
+    ![](images\springrun.jpg)
+
+93. 解释一下什么是 aop？
 
     - AOP即面向切面编程，是OOP编程的有效补充。
     - AOP技术恰恰相反，它利用一种称为"横切"的技术，剖解开封装的对象内部，并将那些影响了多个类的公共行为封装到一个可重用模块，并将其命名为"Aspect"，即切面。所谓"切面"，简单说就是那些与业务无关，却为业务模块所共同调用的逻辑或责任封装起来，便于减少系统的重复代码，降低模块之间的耦合度，并有利于未来的可操作性和可维护性
 
-92. AOP的相关概念
+94. AOP的相关概念
 
     [AOP相关概念](https://www.cnblogs.com/songanwei/p/9417343.html)
 
-93. 解释一下什么是 ioc？
+95. 解释一下什么是 ioc？
 
     - IOC是Inversion of Control的缩写，翻译成“控制反转”。
     - 使用一个第三方来管理对象之间的依赖关系,从而解决各个对象之间紧密依赖的情况;达到解耦的作用
     - 哪些方面的控制被反转了呢? 获得依赖对象的过程被反转了. 
     - 所谓依赖注入，就是由IOC容器在运行期间，动态地将某种依赖关系注入到对象之中
 
-94. spring 有哪些主要模块？
+96. spring 有哪些主要模块？
 
     主要七大模块介绍
 
@@ -622,17 +733,17 @@
 
     7. Spring MVC  提供了web mvc , webviews , jsp ,pdf ,export
 
-95. spring 常用的注入方式有哪些？
+97. spring 常用的注入方式有哪些？
 
     - 构造方法注入
     - setter注入
     - 注解注入(@AutoWried按类型注入,@Resource按名称(先)和类型(后)注入)
 
-96. spring 中的 bean 是线程安全的吗？
+98. spring 中的 bean 是线程安全的吗？
 
     - 不是
 
-97. spring 支持几种 bean 的作用域？
+99. spring 支持几种 bean 的作用域？
 
     - singleton：单例模式
     - prototype：原型模式，每次通过容器的getBean方法获取prototype定义的Bean时，都将产生一个新的Bean实例
@@ -640,33 +751,33 @@
     - session：对于每次HTTP Session，使用session定义的Bean都将产生一个新实例。同样只有在Web应用中使用Spring时，该作用域才有效
     - globalsession：每个全局的HTTP Session，使用session定义的Bean都将产生一个新实例。典型情况下，仅在使用portlet context的时候有效。同样只有在Web应用中使用Spring时，该作用域才有效
 
-98. spring 自动装配 bean 有哪些方式？
+100. spring 自动装配 bean 有哪些方式？
 
-    - xml和注解
+     - xml和注解
 
-99. spring 事务实现方式有哪些？
+101. spring 事务实现方式有哪些？
 
-    - 基于 TransactionProxyFactoryBean的声明式事务管理
+     - 基于 TransactionProxyFactoryBean的声明式事务管理
 
-    - 基于 @Transactional 的声明式事务管理
-    - 基于Aspectj AOP配置事务
+     - 基于 @Transactional 的声明式事务管理
+     - 基于Aspectj AOP配置事务
 
-100. 说一下 spring 的事务传播和隔离机制？
+102. 说一下 spring 的事务传播和隔离机制？
 
      [Spring 事务传播特性和隔离级别](https://www.jianshu.com/p/d42b8c9aa950)
 
-101. 脏读、幻读和不可重复读
+103. 脏读、幻读和不可重复读
 
      - 脏读： 读到未提交的数据
      - 不可重复读： 两次读取同一条数据不一致（数据被更改、删除了）
 
      - 幻读： 两次读取数据量不一致 （数据量增加了）
 
-102. 说一下 spring mvc 运行流程？
+104. 说一下 spring mvc 运行流程？
 
      [SpringMvc工作流程]([https://snailclimb.gitee.io/javaguide/#/system-design/framework/spring/SpringMVC-Principle?id=springmvc-%e5%b7%a5%e4%bd%9c%e5%8e%9f%e7%90%86%ef%bc%88%e9%87%8d%e8%a6%81%ef%bc%89](https://snailclimb.gitee.io/javaguide/#/system-design/framework/spring/SpringMVC-Principle?id=springmvc-工作原理（重要）))
 
-103. spring mvc 有哪些组件？
+105. spring mvc 有哪些组件？
 
      　　1. DispatcherServlet　　请求入口
 
@@ -678,7 +789,7 @@
 
      　　5. ViewResolver　　　　视图处理器,定位页面
 
-104. SpringMVC启动流程
+106. SpringMVC启动流程
 
      1. 初始化应用部署描述文件中每一个listener。
 
@@ -688,11 +799,11 @@
 
      4. 按照顺序<load-on-startup>来初始化servlet，并执行init（）方法。
 
-105. @RequestMapping 的作用是什么？
+107. @RequestMapping 的作用是什么？
 
      - 用于映射url到控制器类或一个特定的处理程序方法
 
-106. @Autowired 的作用是什么？
+108. @Autowired 的作用是什么？
 
      - 可以对类成员变量、方法及构造函数进行标注，让 spring 完成 bean 自动装配的工作。
 
@@ -759,9 +870,9 @@
 
 132. mybatis 有哪些执行器（Executor）？
 
-     - **SimpleExecutor：**每执行一次update或select，就开启一个Statement对象，用完立刻关闭Statement对象
-     - **ReuseExecutor：重复使用Statement对象
-     - **BatchExecutor：**执行update（没有select，JDBC批处理不支持select），将所有sql都添加到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个Statement对象，每个Statement对象都是addBatch()完毕后，等待逐一执行executeBatch()批处理。与JDBC批处理相同。
+     - SimpleExecutor：每执行一次update或select，就开启一个Statement对象，用完立刻关闭Statement对象
+     - ReuseExecutor：重复使用Statement对象
+     - BatchExecutor：执行update（没有select，JDBC批处理不支持select），将所有sql都添加到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个Statement对象，每个Statement对象都是addBatch()完毕后，等待逐一执行executeBatch()批处理。与JDBC批处理相同。
 
 133. mybatis 分页插件的实现原理是什么？
 
@@ -799,61 +910,193 @@
      - Isolation隔离性
      - Durability耐久性
      
-168. char 和 varchar 的区别是什么？
+168. mysql索引类型？
 
-169. float 和 double 的区别是什么？
+     - 主键索引
+     - 唯一索引
+     - 普通索引
+     - 全文索引
+     - 组合索引
+     - 外键索引
+
+169. 什么是聚簇索引？什么是非聚簇索引？
+
+     - 聚簇索引： B+树的叶子节点存放的就是索引行对应的数据；主键使用聚簇索引
+     - 非聚簇索引： 叶子节点存放的是指向对应行的指针；其他键使用非聚簇索引
+
+170. char 和 varchar 的区别是什么？
+
+     - char类型的长度是固定的，varchar的长度是可变的
+     - char最大255，varchar最大65535
+
+171. float 和 double 的区别是什么？
 
      - float:浮点型，**含字节数为4**，32bit，数值范围为-3.4E38~3.4E38（7个有效位）
 
-	- double:双精度实型，**含字节数为8**，64bit数值范围-1.7E308~1.7E308（15个有效位）
+     - double:双精度实型，**含字节数为8**，64bit数值范围-1.7E308~1.7E308（15个有效位）
 
-	- decimal:数字型，16字节，**128bit**，不存在精度损失（相对不存在，28个有效位后会报错），**常用于银行帐目计算**。（28个有效位）
-	
-170. mysql 的内连接、左连接、右连接有什么区别？
+     - decimal:数字型，16字节，**128bit**，不存在精度损失（相对不存在，28个有效位后会报错），**常用于银行帐目计算**。（28个有效位）
 
-171. mysql 索引是怎么实现的？
-     - B树
+172. mysql 的内连接、左连接、右连接有什么区别？
+
+173. mysql 索引是怎么实现的？
+     - B+树
      - Hash
-     
-172. B树、B+ 树、B*树的区别？
 
-	-  B（B-）树：多路搜索树，每个结点存储M/2到M个关键字，非叶子结点存储指向关键字范围的子结点； 所有关键字在整颗树中出现，且只出现一次，非叶子结点可以命中；
+174. B树、B+ 树、B*树的区别？
 
-	- B+树：在B-树基础上，为叶子结点增加链表指针，所有关键字都在叶子结点中出现，非叶子结点作为叶子结点的索引；B+树总是到叶子结点才命中；
+     -  B（B-）树：多路搜索树，每个结点存储M/2到M个关键字，非叶子结点存储指向关键字范围的子结点； 所有关键字在整颗树中出现，且只出现一次，非叶子结点可以命中；
 
-	- B*树：在B+树基础上，为非叶子结点也增加链表指针，将结点的最低利用率从1/2提高到2/3；
+     - B+树：在B-树基础上，为叶子结点增加链表指针，所有关键字都在叶子结点中出现，非叶子结点作为叶子结点的索引；B+树总是到叶子结点才命中；
 
-173. 怎么验证 mysql 的索引是否满足需求？
+     - B*树：在B+树基础上，为非叶子结点也增加链表指针，将结点的最低利用率从1/2提高到2/3；
 
-174. 说一下数据库的事务隔离？
+175. 如何根据explain分析执行计划？
 
-175. 说一下 mysql 常用的引擎？
+     https://segmentfault.com/a/1190000017751405
 
-176. 说一下 mysql 的行锁和表锁？
+176. 说一下数据库的事务隔离？
 
-177. 说一下乐观锁和悲观锁？
+177. 说一下 mysql 常用的引擎？
 
-178. mysql 问题排查都有哪些手段？
+     - ![](images\mysqlengine.png)
 
-179. 如何做 mysql 的性能优化？
+178. 说一下 mysql 的行锁和表锁？
+
+179. 说一下乐观锁和悲观锁？
+
+180. mysql 问题排查都有哪些手段？
+
+181. 如何做 mysql 的性能优化？
 
 ### - Redis
 
 179. redis 是什么？都有哪些使用场景？
-180. redis 有哪些功能？
-181. redis 和 memecache 有什么区别？
-182. redis 为什么是单线程的？
-183. 什么是缓存穿透？怎么解决？
-184. redis 支持的数据类型有哪些？
-185. redis 支持的 java 客户端都有哪些？
-186. jedis 和 redisson 有哪些区别？
-187. 怎么保证缓存和数据库数据的一致性？
-188. redis 持久化有几种方式？
-189. redis 怎么实现分布式锁？
-190. redis 分布式锁有什么缺陷？
-191. redis 如何做内存优化？
-192. redis 淘汰策略有哪些？
-193. redis 常见的性能问题有哪些？该如何解决？
+     - 基于内存的高性能nosql数据库
+     - 缓存，队列，分布式组件，排行榜，最新数据
+     
+180. 默认端口：6379；默认超时时间：无限；monitor监控；info查看运行状态信息
+
+182. 新版本set命令参数？
+
+     - `EX` *seconds* – 设置键key的过期时间，单位时秒
+     - `PX` *milliseconds* – 设置键key的过期时间，单位时毫秒
+     - `NX` – 只有键key不存在的时候才会设置key的值
+     - `XX` – 只有键key存在的时候才会设置key的值
+
+183. redis 和 memecache 有什么区别？
+
+     - 支持lua脚本
+     - 单线程，不存在线程安全问题
+     - 数据类型不同，memecache只支持键值对形式数据
+     - redis会将不常用的数据存到磁盘，降低内存使用
+
+184. redis 为什么是单线程的？
+
+     - 不需要io的情况下单线程效率更高，没有线程切换，复用cpu缓存
+
+185. 什么是缓存穿透？怎么解决？
+     - [什么是Redis缓存穿透、缓存雪崩和缓存击穿](https://baijiahao.baidu.com/s?id=1619572269435584821)
+     - 缓存穿透：如果查询redis不存在，就去db查，如果db也没有，那么每次该查询都会去db；解决：缓存NULL值
+     - 缓存雪崩： 大量缓存同时过期，导致db压力瞬间暴增；解决：不同业务数据设置不同的过期时间
+
+186. redis 支持的数据类型有哪些？
+
+     - string、list、hash、set、sorted set
+
+187. redis 支持的 java 客户端都有哪些？
+     - jedis
+       - 轻量，简洁，便于集成和改造
+       - 支持连接池
+       - 支持pipelining、事务、LUA Scripting、Redis Sentinel、Redis Cluster
+       - 不支持读写分离，需要自己实现
+       - 文档差（真的很差，几乎没有……）
+     - Redisson
+       - 基于Netty实现，采用非阻塞IO，性能高
+         支持异步请求
+         支持连接池
+         支持pipelining、LUA Scripting、Redis Sentinel、Redis Cluster
+         不支持事务，官方建议以LUA Scripting代替事务
+         支持在Redis Cluster架构下使用pipelining
+         支持读写分离，支持读负载均衡，在主从复制和Redis Cluster架构下都可以使用
+         内建Tomcat Session Manager，为Tomcat 6/7/8提供了会话共享功能
+         可以与Spring Session集成，实现基于Redis的会话共享
+         文档较丰富，有中文文档
+
+188. 怎么保证缓存和数据库数据的一致性？
+     - 先更新数据库，再删除缓存（防止另一个线程同时去查了旧的db更新缓存）
+     - Cache Aside Pattern：
+       - 读的时候，先读缓存，缓存没有的话，就读数据库，然后取出数据后放入缓存，同时返回响应。
+       - 更新的时候，**先更新数据库，然后再删除缓存**
+
+189. redis 持久化有几种方式？
+     - RDB fork一个子进程进行快照记录；记录方式：save a b a秒内至少变化了b个数据才同步
+     - AOF 增量记录；记录方式：每秒同步、每修改同步和不同步（30s）
+
+190. redis 怎么实现分布式锁？
+     - setnx 不存在才设置值
+     - lua脚本
+     - lock4j框架
+
+191. redis 分布式锁有什么缺陷？
+     - 低版本redis的setnx和超时需要两条命令，可能导致无法释放锁；lua脚本解决
+     - 高版本set命令直接添加了nx（不存在）和px（超时），可以避免
+
+192. redis 如何做内存优化？
+     - 尽量使用整数
+     - 减少key/value长度，使用二进制序列化对象
+     - 设置合理的淘汰策略
+
+193. 如何使用pipeline？
+
+     ```java
+      List<T> List = redisTemplate.executePipelined(new RedisCallback<T>() {
+                 public T doInRedis(RedisConnection connection) throws DataAccessException {
+                     connection.openPipeline();
+                   // 进行redis操作
+                     return null;
+                 }
+             });
+     ```
+     
+
+     
+194. 使用redis限制30分钟内只能发5次短信；
+
+     ```java
+     public String send(){
+             String key = "abc";
+             ListOperations listOperations = redisTemplate.opsForList();
+             Long size = listOperations.size(key);
+             if (size < 5){
+                 listOperations.leftPush(key,LocalTime.now());
+             }else{
+                 Object o = listOperations.rightPop(key);
+                 LocalTime last = LocalTime.parse(o.toString());
+                 if (last.plus(30, ChronoUnit.MINUTES)
+                         .isAfter(LocalTime.now())){ // 时间是在30分钟以内，则超限了，不允许
+                     listOperations.rightPush(key,o);
+                     return "超过限制，请稍后再试！";
+                 }else {
+                     listOperations.leftPush(key,LocalTime.now());
+                 }
+             }
+             return "发送成功";
+         }
+     ```
+     
+     
+     
+194. redis 淘汰策略有哪些？
+
+     - noeviction: 不删除策略, 达到最大内存限制时, 如果需要更多内存, 直接返回错误信息。 大多数写命令都会导致占用更多的内存(有极少数会例外, 如 DEL )。
+     - allkeys-lru: 所有key通用; 优先删除最近最少使用(less recently used ,LRU) 的 key。
+     - allkeys-random: 所有key通用; 随机删除一部分 key。
+     - volatile-lru: 只限于设置了 expire 的部分; 优先删除最近没有使用(less recently used ,LRU) 的 key。
+     - volatile-random: 只限于设置了 expire 的部分; 随机删除一部分 key。
+     - volatile-ttl: 只限于设置了 expire 的部分; 优先删除剩余时间(time to live,TTL) 短的key。
+     - volatile-lfu: 对于有过期时间的key，删除使用频率最少的
+     - allkeys-lfu： 对于所有的key，删除使用频率最少的
 
 ## 扩展
 
@@ -877,9 +1120,14 @@
 ### - 算法
 
 91. 排序算法
-
-92. 什么是对称加密？什么是非对称加密？什么是签名？
-
+92. 什么是布隆过滤器？使用场景？
+- 使用一个bitmap位图，再加上N个hash算法，将某个参数的N个hash值在位图上记录下来；则：如果一个参数的N个hash值槽位都为1，则很可能已经存在过；如果有1个以上不为1，则一定不存在
+    - 使用场景：非严格要求必须准确的操作，量级巨大的操作；如: 爬虫判断某个url是否爬取过，邮件黑名单等
+    - 优化方式： BloomFilter的核心思想有两点：
+      1. 多个hash，增大随机性，减少hash碰撞的概率
+      2. 扩大数组范围，使hash值均匀分布，进一步减少hash碰撞的概率。
+93. 红黑树
+94. 什么是对称加密？什么是非对称加密？什么是签名？
     - 对称加密：加密和解密采用同一个密钥；AES、DES等
     - 非对称加密： 加密和解密采用不同的密钥；RSA、DSA、ECC
     - 摘要/Hash：根据内容生成一个签名，用来验签；MD5、SHA
