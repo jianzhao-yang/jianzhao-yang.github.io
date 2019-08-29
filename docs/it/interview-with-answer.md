@@ -38,39 +38,45 @@
 
 ### - 容器
 
-18. java 容器都有哪些？
-
-19. Collection 和 Collections 有什么区别？
-
-20. List、Set、Map 之间的区别是什么？
-
-21. HashMap 和 Hashtable 有什么区别？
-
+18. 数组和链表的区别？
+    - 数组： 内存是连续的，初始化时即确定大小，插入、删除效率低，随机访问效率高
+    - 链表：内存不连续，初始化不需要确定大小，插入、删除效率高，随机访问效率低
+19. java 容器都有哪些？
+    - List ： ArrayList、LinkedList、Vector、CopyOnReadArrayList
+    - Map： HashMap、TreeMap、ConCurrentHashMap
+    - Set：HashSet、TreeSet
+20. Collection 和 Collections 有什么区别？
+    - Collection是一个接口，定义了集合的一些基本操作方法；如List，Set和Queue。
+    - Collections是JDK自带的一个集合工具类，里面有很多集合常用的方法，如：排序操作： sort、查找操作：binarySearch、最大/小值：max/min、翻转操作reverse、随机打乱操作shuffle
+21. List、Set、Map 之间的区别是什么？
+    - list是有序集合，允许重复元素
+    - set是无序集合，不允许重复操作；set的底层是使用map实现的
+    - Map是用来存储键值对的集合，key不允许重复，value允许
 22. 如何决定使用 HashMap 还是 TreeMap？
-
+    - hashMap基于hash散列表实现，key是无序的
+    - treeMap是基于红黑树实现的，key是有序的；因为有序，所以支持顺序操作，如查找第一个/最后一个元素：firstKey、lastKey，查找更大/小的一个key：lowerKey、higherKey，截取子map：tailMap、headMap、subMap等
 23. 说一下 HashMap 的实现原理？
-
-24. 说一下 HashSet 的实现原理？
-
-25. ArrayList 和 LinkedList 的区别是什么？
-
-26. 如何实现数组和 List 之间的转换？
-
-27. ArrayList 和 Vector 的区别是什么？
-
-28. Array 和 ArrayList 有何区别？
-
-29. 在 Queue 中 poll()和 remove()有什么区别？
-
-30. 哪些集合类是线程安全的？
-
-31. 迭代器 Iterator 是什么？
-
-32. Iterator 怎么使用？有什么特点？
-
-33. Iterator 和 ListIterator 有什么区别？
-
-34. 怎么确保一个集合不能被修改？
+    - 1.8以前，实现为数组+链表；
+    - 1.8以后，实现为数组+链表/红黑树；链表长度>8变为红黑树，时间复杂度由O(N) -> O(lgN)
+24. ConCurrentHashMap的实现原理？
+    - 1.8以前，使用分段锁；首先将数据分成一段一段的存储，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据的时候，其他段的数据也能被其他线程访问。有些方法需要跨段，比如size()和containsValue()，它们可能需要锁定整个表而而不仅仅是某个段，这需要按顺序锁定所有段，操作完毕后，又按顺序释放所有段的锁。这里“按顺序”是很重要的，否则极有可能出现死锁
+    - 1.8以后，选择了与HashMap类似的数组+链表+红黑树的方式实现，而加锁则采用CAS和synchronized实现。
+25. HashMap在何时会出现线程安全问题？
+    - 在hashMap的容量达到阈值进行扩容的时候，多个线程同时操作可能会生成循环链表
+    - 多线程put的时候，有可能会计算到同一个槽位上，导致两个同时操作时会将其中一个覆盖
+26. 红黑树的优点是什么？为什么使用红黑树？
+    - 红黑树能够以O(log2(N))的时间复杂度进行搜索、插入、删除操作。
+    - 任何不平衡都会在3次旋转之内解决。
+27. ArrayList 和 LinkedList 的区别是什么？
+28. 如何实现数组和 List 之间的转换？
+29. ArrayList 和 Vector 的区别是什么？
+30. Array 和 ArrayList 有何区别？
+31. 在 Queue 中 poll()和 remove()有什么区别？
+32. 哪些集合类是线程安全的？
+33. 迭代器 Iterator 是什么？
+34. Iterator 怎么使用？有什么特点？
+35. Iterator 和 ListIterator 有什么区别？
+36. 怎么确保一个集合不能被修改？
 
 ### - 多线程
 
@@ -839,52 +845,96 @@
 
 ### - Mybatis
 
-125. mybatis 中 #{}和 ${}的区别是什么？
+125. Mybatis核心概念
 
-     - #{}是预编译处理,${}是字符串替换
-126. mybatis执行流程？
-1. 返回创建SqlSessionFactory对象
-     2. 返回SqlSession的实现类DefaultSqlSession对象
-     3. 返回一个MapperProxy的代理对象
-     4.  执行CRUD流程。
-127. mybatis 有几种分页方式？
-     - limit
-     - query(String userName, RowBounds rowBounds)
-     - 实现拦截器
-     - PageHelper
-128. RowBounds 是一次性查询全部结果吗？为什么？
+     ![](images\mybatis.jpg)
+     
+     - Executor是 Mybatis的内部执行器，它负责调用StatementHandler操作数据库，并把结果集通过ResultSetHandler进行自动映射，另外，他还处理了二级缓存的操作。从这里可以看出，我们也是可以通过插件来实现自定义的二级缓存的。
+     - StatementHandler是Mybatis直接和数据库执行sql脚本的对象。另外它也实现了Mybatis的一级缓存。这里，我们可以使用插件来实现对一级缓存的操作(禁用等等)。
+     - ParameterHandler是Mybatis实现Sql入参设置的对象。插件可以改变我们Sql的参数默认设置。
+     - ResultSetHandler是Mybatis把ResultSet集合映射成POJO的接口对象。我们可以定义插件对Mybatis的结果集自动映射进行修改。
+     
+126. mybatis 中 #{}和 ${}的区别是什么？
 
-     - RowBounds是一次性查询全部结果
-     - 从RowBounds源码看出，RowBounds最大数据量为Integer.MAX_VALUE(2147483647)
-129. mybatis 逻辑分页和物理分页的区别是什么？
+       - #{}是预编译处理,${}是字符串替换
 
-     - 逻辑分页,全部数据查到内存后再处理
+127. mybatis执行流程？
 
-     - 物理分页,直接使用limit关键字,在获取的时候就分页
-130. mybatis 是否支持延迟加载？延迟加载的原理是什么？
+128. 返回创建SqlSessionFactory对象
+       2. 返回SqlSession的实现类DefaultSqlSession对象
+       3. 返回一个MapperProxy的代理对象
+       4.  执行CRUD流程。
 
-     - 延迟加载即当sql为一对一/一对多关联时,关联数据只有在使用的时候才查出来
-     - 支持,设置lazyLoadingEnabled=true 即可
-     - 原理是返回的对象是cglib生成的子类,调用相关子对象时会被拦截,再去查询
-131. 说一下 mybatis 的一级缓存和二级缓存？
+129. mybatis 有几种分页方式？
+       - limit
+       - query(String userName, RowBounds rowBounds)
+       - 实现拦截器
+       - PageHelper
 
-     - 一级缓存基于SqlSession
-     - 二级缓存基于namespace
-132. mybatis 和 hibernate 的区别有哪些？
+130. RowBounds 是一次性查询全部结果吗？为什么？
 
-     - 
-133. mybatis 有哪些执行器（Executor）？
+       - RowBounds是一次性查询全部结果
+       - 从RowBounds源码看出，RowBounds最大数据量为Integer.MAX_VALUE(2147483647)
 
-     - SimpleExecutor：每执行一次update或select，就开启一个Statement对象，用完立刻关闭Statement对象
-     - ReuseExecutor：重复使用Statement对象
-     - BatchExecutor：执行update（没有select，JDBC批处理不支持select），将所有sql都添加到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个Statement对象，每个Statement对象都是addBatch()完毕后，等待逐一执行executeBatch()批处理。与JDBC批处理相同。
-134. mybatis 分页插件的实现原理是什么？
+131. mybatis 逻辑分页和物理分页的区别是什么？
 
-     - PageHelper通过`ThreadLocal`来存放分页信息，从而可以做到在Service层实现无侵入性的Mybatis分页实现
-     - [MyBatis之分页插件(PageHelper)工作原理](https://www.cnblogs.com/dengpengbo/p/10579631.html)
-135. mybatis 如何编写一个自定义插件？
+       - 逻辑分页,全部数据查到内存后再处理
 
-     - 
+       - 物理分页,直接使用limit关键字,在获取的时候就分页
+
+132. mybatis 是否支持延迟加载？延迟加载的原理是什么？
+
+       - 延迟加载即当sql为一对一/一对多关联时,关联数据只有在使用的时候才查出来
+       - 支持,设置lazyLoadingEnabled=true 即可
+       - 原理是返回的对象是cglib生成的子类,调用相关子对象时会被拦截,再去查询
+
+133. 说一下 mybatis 的一级缓存和二级缓存？
+
+       - 一级缓存基于SqlSession
+       - 二级缓存基于namespace
+
+134. mybatis 和 hibernate 的区别有哪些？
+
+       1. hibernate是全自动，而mybatis是半自动（mybatis需要开发者编写sql语句，hibernate中封装了简单的增删改查可以不用编写操作数据库语句）
+
+       2. hibernate数据库移植性远大于mybatis（由于mybatis中SQL语句是我们自己编写的，不同数据库的操作语句又不同所以使用mybatis时 更换数据库很麻烦，而hibernate会自动根据不同的数据库生成不同的操作语句）
+
+       3. sql直接优化上，mybatis要比hibernate方便很多（mybatis是开发者编写的sql语句，优化上很方便，而hibernate是生成的sql无法直接优化，比较麻烦)
+
+135. mybatis 有哪些执行器（Executor）？
+
+       - SimpleExecutor：每执行一次update或select，就开启一个Statement对象，用完立刻关闭Statement对象
+       - ReuseExecutor：重复使用Statement对象
+       - BatchExecutor：执行update（没有select，JDBC批处理不支持select），将所有sql都添加到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个Statement对象，每个Statement对象都是addBatch()完毕后，等待逐一执行executeBatch()批处理。与JDBC批处理相同。
+
+136. mybatis 分页插件的实现原理是什么？
+
+       - PageHelper通过`ThreadLocal`来存放分页信息，从而可以做到在Service层实现无侵入性的Mybatis分页实现
+       - [MyBatis之分页插件(PageHelper)工作原理](https://www.cnblogs.com/dengpengbo/p/10579631.html)
+
+137. mybatis 如何编写一个自定义插件？
+
+       - 实现Interceptor接口的intercept方法，入参Invocation对象具体内容由类注解@Signature决定
+
+       - ```java
+         public @interface Signature {
+             Class<?> type(); // 决定Invocation的target
+             String method(); // 拦截什么类型的方法，如create、query
+             Class<?>[] args();
+         }
+         public class Invocation {
+             private final Object target;
+             private final Method method;
+             private final Object[] args;
+         }
+         ```
+
+       - 只能拦截四种类型：
+
+         - Executor (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)          --执行sql
+         - ParameterHandler (getParameterObject, setParameters)                     --获取、设置参数
+         - ResultSetHandler (handleResultSets, handleOutputParameters)          --处理结果集
+         - StatementHandler (prepare, parameterize, batch, update, query)          --记录sql
 
 ## 数据库/缓存
 

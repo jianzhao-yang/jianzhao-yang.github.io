@@ -90,6 +90,23 @@
 
 ### RabbitMQ
 
+- 核心概念
+
+  ![https://blog.csdn.net/xinbaobaoer/article/details/54907793](images\rabbitmq.png)
+
+  - ConnectionFactory：与RabbitMQ服务器连接的管理器
+  - Connection：与RabbitMQ服务器的连接
+  - Channel：与Exchange的连接
+  - Exchange：接受消息提供者（生产者）的消息，并根据消息的RoutingKey和Exchange绑定的BindingKey分配消息
+  - Queue：存储消息接收者（消费者）的消息
+  - RoutingKey：指定当前消息被谁接受
+  - BindingKey：指定当前Exchange下，什么样的RoutingKey会被下派到当前绑定的Queue中
+
+- 死信队列
+
+  - https://www.cnblogs.com/toov5/p/10288260.html
+  - 无法被消费的消息会被归到死信队列中去
+
 ### RocketMQ
 
 ## Zookeeper
@@ -132,10 +149,27 @@
 4. failsafe：失效安全 
      Fail-Safe的含义为“失效安全”，即使在故障的情况下也不会造成伤害或者尽量减少伤害。维基百科上一个形象的例子是红绿灯的“冲突监测模块”当监测到错误或者冲突的信号时会将十字路口的红绿灯变为闪烁错误模式，而不是全部显示为绿灯。
 
+## 分布式事务
+
+### 2PC/3PC
+
+[分布式一致性算法2PC和3PC](https://blog.51cto.com/11821908/2058651)
+
+### TCC
+
+
+
 ## 分布式算法
 
 ### Paxos
 
+### ZAB (Zookeeper Atomic  Broadcast)
+
 ### Raft
+
+[拜占庭将军问题](https://www.jianshu.com/p/8bcef0ca676c)
+
+- 只有当系统中2/3的参与者是正常的，系统才能够正常使用 （N > 3F + 1）
+- 以上算法均基于非拜占庭容错的分布式一致性算法，即除考虑消息的丢失、超时、乱序，但不考虑消息被篡改；只有区块链中使用的相关算法PoW和PoX等才能有限解决
 
 ### 一致性hash
