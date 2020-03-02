@@ -7,14 +7,20 @@
   <meta name="description" content="Description">
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <!-- 四种页面主题,按需选择 -->
-  <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css">
+    <link rel="stylesheet" href="static/vue.css">
+  <!-- <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css"> -->
   <!-- <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/buble.css"> -->
   <!-- <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/dark.css"> -->
   <!-- <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/pure.css"> -->
 </head>
 <body>
+  <nav>
+    <a href="#/">主页</a>
+    <a href="#/it/">IT技术</a>
+    <a href="#/books/">读书笔记</a>
+  </nav>
   <div id="app"></div>
-  <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+  <script src="static/docsify.min.js"></script>
 
    <script>
     window.$docsify = {
@@ -25,6 +31,9 @@
       loadSidebar: true,
         // 侧边栏最大层级
       subMaxLevel: 3,
+      // 加载导航栏
+      // loadNavbar: true,
+      // loadNavbar: '/nav.md',
     //  alias: {
     //    '/.*/_sidebar.md': '/_sidebar.md'
     //  },
@@ -42,8 +51,8 @@
   <!-- 下一页插件 -->
   <!--  <script src="//unpkg.com/docsify-pagination/dist/docsify-pagination.min.js"></script> -->
   <!-- 代码复制插件 -->
-  <script src="//unpkg.com/docsify-copy-code"></script>
+  <script src="static/docsify-copy-code"></script>
    <!-- emoji插件 -->
-   <script src="//unpkg.com/docsify/lib/plugins/emoji.js"></script>
+   <script src="static/emoji.js"></script>
   </body>
 </html>
