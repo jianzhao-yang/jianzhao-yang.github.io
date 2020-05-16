@@ -49,7 +49,20 @@
    - @ConditionalOnResource
    - @ConditionalOnProperty
 
-### Zuul 网关
+### 网关
+
+#### 为什么Spring Cloud GateWay和Zuul同时出现？
+
+​	因为zuul1.x基于servlet是阻塞的，2.x又经常停更跳票，所以spring自己出了gateway代替
+
+#### 微服务网关可以有哪些用途？
+
+- 屏蔽内部细节
+- 反向路由
+- 安全认证
+- 限流熔断
+- 日志监控
+- 灰度发布
 
 ### Ribbon 负载均衡
 
@@ -84,6 +97,7 @@
 
 - 为什么是unsafe？
   - 核心方法都是native的，底层直接操作引用和内存，会造成不可知的风险；故只有JDK的类能使用（限制了只有BootStrapClassLoader加载的类可以使用）
+  - Unsafe类可以使用反射的方式绕过限制直接使用
 - ABA问题的解决：AtomicStampedReference和 AtomicMarkableReference；使用版本号/时间戳解决
 
 ## MQ
