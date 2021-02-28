@@ -6,7 +6,7 @@
 
 ​				https://snailclimb.gitee.io/javaguide/
 
-​				http://zhangchangle.com/#/
+​				http://cyc2018.gitee.io/cs-notes/#/README
 
 ​				https://doocs.github.io/advanced-java/
 
