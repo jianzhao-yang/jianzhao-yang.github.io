@@ -165,3 +165,9 @@ embstr 是专门用于保存短字符串的一种优化编码方式，跟正常�
 - https://www.cnblogs.com/-wenli/p/12777703.html
 - 使用lpush brpop实现
 - 使用PUB/SUB的方式，缺点：如果发布消息时消费者不在线则直接丢失消息
+
+## 参考博客
+
+https://www.cnblogs.com/jstarseven/p/12586147.html
+
+https://www.cnblogs.com/hunternet/p/11306690.html
