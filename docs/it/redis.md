@@ -80,9 +80,9 @@ struct sdshdr{
 
 #### 编码方式
 
-- int：8个字节的长整型 
-- embstr：小于等于39个字节的字符串 
-- raw：大于39个字节的字符串 
+- int：8个字节的长整型
+- embstr：小于等于39个字节的字符串
+- raw：大于39个字节的字符串
 
 #### embstr
 
@@ -95,6 +95,54 @@ embstr 是专门用于保存短字符串的一种优化编码方式，跟正常�
   - 3.2时redis底层将sdshdr拆分为sdshdr5、sdshdr8、sdshdr16、sdshdr32（等同于原sdshdr）、sdshdr64，并且添加一个flag字段标识数据类型
   - 3.0时，可用str长度为： 64 - redisObject大小（16）- sdshdr大小（free4 + len4 + buf1 = 9）=39
   - 3.2时，可用str长度为： 64 - redisObject大小（16）- sdshdr8大小（free1 + len1 + buf1 +flag1 = 4）=44
+
+## redis 集群
+
+### redis同步机制
+
+#### 全量同步 SYNC
+- Redis全量复制一般发生在Slave初始化阶段（SYNC），这时Slave需要将Master上的所有数据都复制一份。具体步骤如下：
+  1. 从服务器连接主服务器，发送SYNC命令；
+  2. 主服务器接收到SYNC命名后，开始执行BGSAVE命令生成RDB文件并使用缓冲区记录此后执行的所有写命令；
+  3. 主服务器BGSAVE执行完后，向所有从服务器发送快照文件，并在发送期间继续记录被执行的写命令；
+  4. 从服务器收到快照文件后丢弃所有旧数据，载入收到的快照；
+  5. 主服务器快照发送完毕后开始向从服务器发送缓冲区中的写命令；
+  6. 从服务器完成对快照的载入，开始接收命令请求，并执行来自主服务器缓冲区的写命令；
+
+- 全量同步条件
+  - slave 初始化阶段
+  - slave 进行增量同步失败，或者slave断线
+
+#### 全量同步 PSYNC
+
+- 为了优化断线导致的增量同步，redis 2.8之后将sync改为psync，增加了部分同步的功能.
+  - 复制积压缓冲区  
+    - 复制积压缓冲区是由Master维护的一个固定长度的FIFO队列，它的作用是缓存已经传播出去的命令。当Master进行命令传播时，不仅将命令发送给所有Slave，还会将命令写入到复制积压缓冲区里面。
+- psync执行流程
+  1. 客户端向服务器发送SLAVEOF命令，让当前服务器成为Slave  
+  2.  当前服务器根据自己是否保存Master runid来判断是否是第一次复制，如果是第一次同步则跳转到3，否则跳转到4；  
+  3.  向Master发送PSYNC ? -1 命令来进行完整同步；  
+  4.  向Master发送PSYNC runid offset；  
+  5. Master接收到PSYNC 命令后首先判断runid是否和本机的id一致，如果一致则会再次判断offset偏移量和本机的偏移量相差有没有超过复制积压缓冲区大小，如果没有那么就给Slave发送CONTINUE，此时Slave只需要等待Master传回失去连接期间丢失的命令；  
+  6. 如果runid和本机id不一致或者双方offset差距超过了复制积压缓冲区大小，那么就会返回FULLRESYNC runid offset，Slave将runid保存起来，并进行完整同步。
+
+#### 增量同步
+1. 从服务器向主服务器发送PSYNC命令，携带主服务器的runid和复制偏移量；
+2. 主服务器验证runid和自身runid是否一致，如不一致，则进行全量复制；
+3. 主服务器验证复制偏移量是否在积压缓冲区内，如不在，则进行全量复制；
+4. 如都验证通过，则主服务器将保持在积压区内的偏移量后的所有数据发送给从服务器，主从服务器再次回到一致状态。
+
+## redis-cluster
+
+### 集群搭建
+
+### 一致性hash和hash槽
+
+### 常用命令
+
+### 选举机制
+
+### 通信机制
 
 ## redis实际场景应用
 
@@ -151,7 +199,7 @@ embstr 是专门用于保存短字符串的一种优化编码方式，跟正常�
       redis.call('zadd', KEYS[1], ARGV[2], ARGV[4])  // 	4. ZADD key score1 member1，不大于则添加
       return 0
   else //4
-      return 1 
+      return 1
   end
   ```
 
@@ -168,6 +216,16 @@ embstr 是专门用于保存短字符串的一种优化编码方式，跟正常�
 
 ## 参考博客
 
+### 数据结构
+
 https://www.cnblogs.com/jstarseven/p/12586147.html
 
 https://www.cnblogs.com/hunternet/p/11306690.html
+
+### 主从同步
+
+https://blog.csdn.net/u012538947/article/details/80601356
+
+### redis-cluster
+
+https://www.cnblogs.com/yufeng218/p/13688582.html	
