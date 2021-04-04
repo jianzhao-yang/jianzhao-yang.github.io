@@ -87,7 +87,9 @@
 
 ## JUC
 
-### AbstractQueuedSynchronizer（AQS）https://www.jianshu.com/p/da9d051dcc3d
+### AbstractQueuedSynchronizer（AQS）
+
+​		https://www.jianshu.com/p/da9d051dcc3d
 
 - 内部维护了一个CLH实现的FIFO队列，用于线程等待获取资源；
 - 又维护了一个volatile的变量state，用于代表资源；
@@ -120,10 +122,143 @@
 
   - https://www.cnblogs.com/toov5/p/10288260.html
   - 无法被消费的消息会被归到死信队列中去
+  - 可以根据死信队列的原理，设置消息的失效时间，构造延时队列
 
 ### RocketMQ
 
 ## Zookeeper
+
+### zookeeper是什么?
+
+- zookeeper是一个分布式协调工具，主要用于分布式锁、服务注册和发现、共享配置和状态信息
+
+### zookeeper节点类型
+
+
+    -  PERSISTENT  持久化
+    -  PERSISTENT_SEQUENTIAL  持久化顺序节点
+    -  EPHEMERAL  临时（ 客户端session超时这类节点就会被自动删除 ）
+    -  EPHEMERAL_SEQUENTIAL   临时顺序节点
+
+### zookeeper实现分布式锁流程
+
+
+    - 所有客户端都在指定znode下创建临时顺序节点
+    - 取该节点下的所有节点，按照需要排序
+    - 查看自己是否是最小的节点
+    
+      - 如果自己是，则获取到锁
+      - 如果自己不是，则监听次小（n-1）节点的删除事件。 次小节点删除即获取到锁
+
+### curator的分布式锁实现
+
+```java
+public static void main(String[] args) {
+
+    final String connectString = "localhost:2181,localhost:2182,localhost:2183";
+
+    // 重试策略，初始化每次重试之间需要等待的时间，基准等待时间为1秒。
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+
+    // 使用默认的会话时间（60秒）和连接超时时间（15秒）来创建 Zookeeper 客户端
+    @Cleanup CuratorFramework client = CuratorFrameworkFactory.builder().
+        connectString(connectString).
+        connectionTimeoutMs(15 * 1000).
+        sessionTimeoutMs(60 * 100).
+        retryPolicy(retryPolicy).
+        build();
+
+    // 启动客户端
+    client.start();
+
+    final String lockNode = "/lock_node";
+    InterProcessMutex lock = new InterProcessMutex(client, lockNode);
+    try {
+      // 1. Acquire the mutex - blocking until it's available.
+      lock.acquire();
+      // OR
+
+      // 2. Acquire the mutex - blocks until it's available or the given time expires.
+      if (lock.acquire(60, TimeUnit.MINUTES)) {
+        Stat stat = client.checkExists().forPath(lockNode);
+        if (null != stat){
+          // Dot the transaction
+        }
+      }
+    } finally {
+      if (lock.isAcquiredInThisProcess()) {
+        lock.release();
+      }
+    }
+  }
+```
+
+41. curator锁类型
+
+- **zookeper的实现主要有下面四类:**
+     - InterProcessMutex：分布式可重入排它锁
+  - InterProcessSemaphoreMutex：分布式不可重入排它锁
+  - InterProcessReadWriteLock：分布式可重入读写锁
+  - InterProcessMultiLock：将多个锁作为单个实体管理的容器
+
+### zookeeper的选举机制
+
+- 节点状态
+     - **Looking** ：选举状态。
+  - **Following** ：Follower节点（从节点）所处的状态。
+  - **Leading** ：Leader节点（主节点）所处状态。
+- 崩溃恢复
+-  **Leader election**
+  - 选举阶段，此时集群中的节点处于Looking状态。它们会各自向其他节点发起投票，投票当中包含自己的服务器ID和最新事务ID（ZXID） 
+    -  接下来，节点会用自身的ZXID和从其他节点接收到的ZXID做比较，如果发现别人家的ZXID比自己大，也就是数据比自己新，那么就重新发起投票，**投票给目前已知最大的ZXID所属节点。** （ zxid相同就比较myid大小，myid大的作为leader服务器）
+    -  每次投票后，服务器都会统计投票数量，判断是否有某个节点得到**半数**以上的投票。如果存在这样的节点，该节点将会成为**准Leader**，状态变为Leading。其他节点的状态变为Following。 
+  -  **Discovery** 
+  
+    - 为了防止某些意外情况，比如因网络原因在上一阶段产生多个Leader的情况。
+    - 所以这一情况，Leader集思广益，接收所有Follower发来各自的最新epoch值。Leader从中选出最大的epoch，基于此值加1，生成新的epoch分发给各个Follower。
+    - 各个Follower收到全新的epoch后，返回ACK给Leader，带上各自最大的ZXID和历史事务日志。Leader选出最大的ZXID，并更新自身历史日志。
+  -  **Synchronization** 
+  
+    -  同步阶段，把Leader刚才收集得到的最新历史事务日志，同步给集群中所有的Follower。只有当半数Follower同步成功，这个准Leader才能成为正式的Leader。 
+
+### 数据写入
+
+-  客户端发出写入数据请求给任意Follower。
+-  Follower把写入数据请求转发给Leader。
+-  Leader采用**二阶段提交**方式，先发送Propose广播给Follower。
+-  Follower接到Propose消息，写入日志成功后，返回ACK消息给Leader。
+-  Leader接到半数以上ACK消息，返回成功给客户端，并且广播Commit请求给Follower。
+
+### ZXID是啥 
+
+
+    - zookeeper节点所处理的事务id
+    -  最大ZXID也就是节点本地的最新事务编号，包含**epoch**和计数两部分。epoch是纪元的意思，相当于Raft算法选主时候的term。 
+
+### zookeeper数据模型
+
+- 采用类目录树结构,树是由节点所组成，Zookeeper的数据存储也同样是基于节点，这种节点叫做**Znode**。 
+  
+- znode数据结构
+	- **data**：Znode存储的数据信息。
+    - **ACL**：记录Znode的访问权限，即哪些人或哪些IP可以访问本节点。
+    - **stat**：包含Znode的各种元数据，比如事务ID、版本号、时间戳、大小等等。
+    - **child**：当前节点的子节点引用，类似于二叉树的左孩子右孩子。
+  
+- 基本操作
+	- **create**：创建节点
+    - **delete**：删除节点
+    - **exists**：判断节点是否存在
+    - **getData**：获得一个节点的数据
+    - **setData**：设置一个节点的数据
+    - **getChildren**：获取节点下的所有子节点
+  
+  
+
+### 事件通知
+
+- Zookeeper客户端在请求读操作的时候，可以选择是否设置**Watch**。Watch是什么意思呢？
+- 我们可以理解成是注册在特定Znode上的触发器。当这个Znode发生改变，也就是调用了create，delete，setData方法的时候，将会触发Znode上注册的对应事件，请求Watch的客户端会接收到异步通知。
 
 ## Dubbo
 
