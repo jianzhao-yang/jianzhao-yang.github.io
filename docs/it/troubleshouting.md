@@ -11,3 +11,41 @@
 - 场景： 项目中每过一段时间（几天）就会发生OOM
 - 分析： 因为项目启动时使用了-XX：+HeapDumpOnOutOfMemoryError参数，所以会自动dump堆信息到文件heap.hprof；此时我们只需要使用相关工具分析dump文件即可。将生成的dump文件导出，使用jvisualvm进行查看，发现有很多订单对象存在于内存中，吃掉了大量的内存。于是对系统进行排查，，发现由于需求变更，很多方法签名不能满足正常使用，之前传的参数不够用，所以使用了threadlocal进行跨方法的对象传递，但是在使用了之后却没有进行及时的清理。导致出现内存占用过高的情况
 - 解决： 排查threadlocal对象使用的地方，及时使用remove进行清理
+
+### JVM调优记录
+
+https://www.cnblogs.com/itworkers/p/11791778.html
+
+- jstat
+
+  - 使用 jstat -gcutil pid 毫秒时间 查看gc情况
+  - 使用 jstat -gccause pid 毫秒时间 查看gc原因
+
+- jinfo
+
+  - 使用 jinfo -flags pid 查看jvm启动参数
+
+- 查看项目运行时间
+
+  - ps -p <pid> -o etime 
+
+- jvm参数
+
+  - ```
+    JAVA_OPTS="-Xms2g -Xmx2g -Xmn512m -XX:MaxPermSize=256m  -server -Xss256k -XX:PermSize=128M -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/data/log/gclog/gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/data/log/jvmdump/jvm.bin -XX:+UseConcMarkSweepGC -XX:+UseParNewGC  -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=0 -XX:+CMSClassUnloadingEnabled -XX:+TieredCompilation  -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationStoppedTime -XX:+PrintHeapAtGC
+    ```
+
+- jmap
+
+  - jmap -histo:live pid 查看存活对象
+  -  jmap -heap $pid，查看进程的 堆状态
+  -  jmap -dump:live,format=b,file=/tmp/application.hprof pid  dump堆文件
+
+- jstack
+
+  - jstack -l pid 查看栈信息
+
+### 一次http头大小设置错误导致的OOM
+
+之前项目中有一次要上线一个活动，需要进行压测，结果压测环境出现了OOM。由于我在JVM启动里设置了OOM后dump文件，所以就可以拿到dump文件进行分析。我是使用mat进行分析的，分析过程中发现有一个byte[]数组非常多，占用了很多内存，每个数组大小都有10M左右。查看所有对这些数组的引用，发现很多都指向tomcat的一个ReadBuffer类。因为正常情况下tomcat是不会出现这种问题的，所以排查是否是自己设置的参数错误导致的。最后排查到是因为项目中权限校验使用的是jwt的token形式，之前因为这个导致header的大小超过了默认的4k，所以修改了设置server.max-http-header-size: 10485760 #10M，从网上复制过来的配置。将默认的最大header设置为10M，但是没有想到tomcat分配是 MaxHttpHeaderSizeReadBuffer + ReadBuffer ，直接以最大值进行设置，就导致一个http请求占用的内存过大，当进行压测时，http请求数激增，会导致OOM
+

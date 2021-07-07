@@ -28,8 +28,6 @@ typedef struct redisObject {
 
 #### redis数据的编码方式
 
-![](http://www.yund.tech/yund-cms/sys/common/view/files/20200403/d58a27f7-6cb2-4a2b-bb23-44a9e3801ff7.png)
-
 ```
  REDIS_ENCODING_INT（long 类型的整数）
  REDIS_ENCODING_EMBSTR embstr （编码的简单动态字符串）
@@ -55,7 +53,7 @@ struct sdshdr{
 }
 ```
 
-#### ziplist 压缩表
+#### ziplist
 
 ##### 简介
 
@@ -76,74 +74,17 @@ struct sdshdr{
   - encoding 记录节点的数据类型和数据长度
   - contents 记录数据
 
-#### skiplist 跳跃表
-
-##### 数据结构
-
-```c
-/**
- * 有序集合结构体
- */
-typedef struct zset {
-    /*
-     * Redis 会将跳跃表中所有的元素和分值组成 
-     * key-value 的形式保存在字典中
-     * todo：注意：该字典并不是 Redis DB 中的字典，只属于有序集合
-     */
-    dict *dict;
-    /*
-     * 底层指向的跳跃表的指针
-     */
-    zskiplist *zsl;
-} zset;
-
-/**
- * 跳跃表结构体
- */
-typedef struct zskiplist {
-    struct zskiplistNode *header, *tail;
-    unsigned long length;
-    int level;
-} zskiplist;
-
-/**
- * ZSETs use a specialized version of Skiplists
- * 跳跃表中的数据节点
- */
-typedef struct zskiplistNode {
-    sds ele;
-    // 分值
-    double score;
-    // 后退指针
-    struct zskiplistNode *backward;
-    // 层
-    struct zskiplistLevel {
-        // 前进指针
-        struct zskiplistNode *forward;
-        /**
-         * 跨度实际上是用来计算元素排名(rank)的，
-         * 在查找某个节点的过程中，将沿途访过的所有层的跨度累积起来，
-         * 得到的结果就是目标节点在跳跃表中的排位
-         */
-        unsigned long span;
-    } level[];
-} zskiplistNode;
-```
-
-- 参考  [死磕Redis5.0之跳跃表 - 简书 (jianshu.com)](https://www.jianshu.com/p/c2841d65df4c) 
-- 
 
 
+### String
 
-#### String
-
-##### 编码方式
+#### 编码方式
 
 - int：8个字节的长整型
 - embstr：小于等于39个字节的字符串
 - raw：大于39个字节的字符串
 
-##### embstr
+#### embstr
 
 embstr 是专门用于保存短字符串的一种优化编码方式，跟正常的字符编码相比，字符编码会调用两次内存分配函数来分别创建 redisObject 和 sdshdr 结构（动态字符串结构），而 embstr 编码则通过调用一次内存分配函数来分配一块连续的内存空间，空间中包含 redisObject 和 sdshdr（动态字符串）两个结构，两者在同一个内存块中。从 Redis 3.0 版本开始，字符串引入了 embstr 编码方式，长度小于 OBJ_ENCODING_EMBSTR_SIZE_LIMIT(39) 的字符串将以EMBSTR方式存储。
 
@@ -156,10 +97,6 @@ embstr 是专门用于保存短字符串的一种优化编码方式，跟正常�
   - 3.2时，可用str长度为： 64 - redisObject大小（16）- sdshdr8大小（free1 + len1 + buf1 +flag1 = 4）=44
 
 ## 特殊数据结构
-
-### stream
-
-https://zhuanlan.zhihu.com/p/60501638
 
 ### HyperLogLog 
 
@@ -209,86 +146,7 @@ https://zhuanlan.zhihu.com/p/60501638
   - 布隆过滤器空间利用率比bitmap高,一个位可以代表多个值
   - **布隆过滤器可以输入字符串,而bitmap必须转换为数值才可以.**
 
-## 缓存问题
-
-### 缓存雪崩
-
-- 现象： 短期内大量缓存过期，导致过多请求打到DB
-- 解决方式： key的过期时间添加随机数
-
-### 缓存击穿
-
-- 现象： 同一时间大量并发请求同一个DB有但是缓存里没有的数据（该缓存正在构建中）
-- 解决方式：2级缓存，加锁，后台自动刷新缓存，限流，热点key永不过期
-
-### 缓存穿透
-
-- 现象：查询数据库和缓存中都没有的数据时，每次都要去db扫表查询
-- 解决方式：使用布隆过滤器预加载，查询时限定范围，不存在的数据使用null值保存在缓存中
-
-## 数据更新机制
-
-
-
-## redis持久化
-
-### RDB
-
-- 配置文件 save t i t秒内有i个key变化则进行持久化
-- 
-
-### AOF
-
-- 配置文件 
-
-  ```
-  appendonly yes  #开启AOF模式 
-  appendfilename "appendonly.aof" #保存数据的AOF文件名称 
-  
-  # appendfsync always
-  appendfsync everysec    #fsync模式,刷盘机制（将修改从缓冲区刷到磁盘）
-  # appendfsync no
-  
-  no-appendfsync-on-rewrite no    #原文3
-  
-  auto-aof-rewrite-percentage 100 # 自上次aof之后增长的百分比
-  auto-aof-rewrite-min-size 64mb  #aof重写最小大小
-  
-  aof-load-truncated yes  # 是否加载尾部有问题的aof文件（因为断电等导致损坏）
-  ```
-
-- aof文件格式
-
-  - ```
-    *3
-    $3
-    set
-    $3
-    we3
-    $4
-    1234
-    ```
-
-  - 第一行 *3代表有3个参数
-
-  - 第二行 $3代表第一个参数长度为3
-
-  - 第三行 第一个参数
-
-  - 4~7同理
-
-### 混合模式
-
-- 4.0之后新增混合模式，aof文件中保存rdb二进制数据+少量aof
-- 体积小，可读性差
-
-- aof-use-rdb-preamble true
-
 ## redis 集群
-
-### redis-sentinel
-
-
 
 ### redis同步机制
 
@@ -325,76 +183,6 @@ https://zhuanlan.zhihu.com/p/60501638
 4. 如都验证通过，则主服务器将保持在积压区内的偏移量后的所有数据发送给从服务器，主从服务器再次回到一致状态。
 
 ## redis-cluster
-
-### Gossip协议
-
-> redis 维护集群元数据采用的是gossip 协议，**所有节点都持有一份元数据**，不同的节点如果出现了元数据的变更，就不断将元数据发送给其它的节点，让其它节点也进行元数据的变更。
->
-> - **优点**
->
-> 元数据的更新比较**分散**，不是集中在一个地方，降低了压力；
->
-> - **缺点**
->
-> 元数据的更新有**延时**，可能导致集群中的一些操作会有一些滞后。
-
-#### 数据类型
-
-- **meet**：某个节点在内部发送了一个gossip meet 消息给**新加入的节点**，通知那个节点去加入我们的集群。然后新节点就会加入到集群的通信中
-
-- **ping**：每个节点都会频繁给其它节点发送 ping，其中包含自己的状态还有自己维护的集群元数据，互相通过 ping **交换元数据**。
-- **pong**：ping 和 meet消息的**返回响应**，包含自己的状态和其它信息，也用于信息广播和更新。
-- **fail**：某个节点判断另一个节点 fail 之后，就发送 fail 给其它节点，通知其它节点说这个节点已宕机。
-
-#### MEET
-
-![](https://img2020.cnblogs.com/blog/1816118/202012/1816118-20201203211748069-924817932.png)
-
-#### PING/PONG
-
-![](https://img2020.cnblogs.com/blog/1816118/202012/1816118-20201203211735841-445908647.png)
-
-#### PFAIL/FAIL
-
-- PFAIL疑似下线.当一个节点A认为其它节点B下线之后,会将其标记为 *Possible failure* ,通知给其它节点
-- 节点C接收到A的通知,会将B加入到自己的下线报告中 (Fail Report) . 
-- 节点C尝试对下线报告中的节点B进行通信,如果无法通信也将其标记为PFAIL,并通知给其它节点.
-- 所有节点接收到下线报告都会进行客观下线判断: 节点中超过一半(包括自己)的节点都将其标记为下线.则为客观下线
-- 立即将客观下线FAIL通知给集群内**所有节点**
-- 下线判断周期为 cluster_node_timeout*2 .超过周期不再进行处理
-
-#### 元数据
-
-Redis Cluster 中的每个节点都**维护一份自己视角下的当前整个集群的状态**，主要包括：
-
-1.  当前集群状态
-2. 集群中各节点所负责的 slots信息，及其migrate状态
-3. 集群中各节点的master-slave状态
-4. 集群中各节点的存活状态及怀疑Fail状态
-
-#### 继续深入剖析ping消息
-
-- ping 时要携带一些元数据，如果很频繁，可能会加重网络负担。因此，一般每个节点每秒会执行 10 次 ping，每次会选择 5 个**最久没有通信**的其它节点。
-- 当然如果发现某个节点通信延时达到了 **cluster_node_timeout / 2，那么立即发送 ping**，避免数据交换延时过长导致信息严重滞后。比如说，两个节点之间都 10 分钟没有交换数据了，那么整个集群处于严重的元数据不一致的情况，就会有问题。所以 cluster_node_timeout 可以调节，如果调得比较大，那么会降低 ping 的频率。
-- 每次 ping，会**带上自己节点的信息，还有就是带上 1/10 其它节点的信息**，发送出去，进行交换。至少包含 3 个其它节点的信息，最多包含 总节点数减 2 个其它节点的信息。
-
-#### 故障迁移
-
-> 当节点的的两个子节点接收到其主节点的FAIL状态消息时，两个节点就会开始发起故障迁移，竞选成为新的Master节点。两个节点参与竞选之前，首先要检查自身是否有资格参与竞选。
-
-##### 资格检查
-
-> 通过子节点最近一次与主节点通信的时间判断是否有选举权限,以及选举优先级
-
-##### 休眠时间计算
-
-> 休眠时间有三部分: 固定时间500ms + 随机时间(0~500ms) + 排名时间(rank * 1000)
-
-##### 选举
-
-- 先唤醒的节点会与其它主节点进行通信,要求将自己选举为主节点
-- 一半以上主节点投票给自己之后,将自己替换为主节点,负责原主节点下的slot,通知给其它节点
-- 原先的主节点以及该主节点的其他节点自动成为新的主节点的Slave节点。
 
 ### 集群搭建
 
@@ -447,14 +235,6 @@ Redis Cluster 中的每个节点都**维护一份自己视角下的当前整个�
 ### 通信机制
 
 ## redis实际场景应用
-
-### 热点key
-
-- 热点key的发现
-  - 使用proxy或二级缓存发现热点key
-  - facebook的redis-faina进行redis分析
-  - redis-cli -hotkeys分析
-  - https://blog.csdn.net/weixin_39723655/article/details/111296590
 
 ### redis实现top k
 
@@ -520,17 +300,8 @@ Redis Cluster 中的每个节点都**维护一份自己视角下的当前整个�
 
 ### redis实现消息队列
 
-- 使用lpush brpop实现；消息确认使用brpoplpush source dest timeout将消息弹出并压入另一个队列（专门用来做消息确认）
+- 使用lpush brpop实现
 - 使用PUB/SUB的方式，缺点：如果发布消息时消费者不在线则直接丢失消息
-- stream方式，5.0新增
-
-
-
-## key过期删除机制
-
-- redis使用惰性删除+定时删除的策略
-- 惰性删除：当使用到key的时候检测key是否过期，如果过期返回nil
-- 定时删除：定时任务随机抽取20个key，删除过期的key，如果过期的key超过5个，则重复操作；删除过期key时间片不超过总定时任务时间的25%
 
 ## 内存淘汰机制
 
@@ -608,8 +379,6 @@ https://www.cnblogs.com/yufeng218/p/13688582.html
  [Redis-cluster 纯手工搭建 – Jack's Blog (liritian.com)](https://www.liritian.com/archives/737) 
 
  [集群教程 — Redis 命令参考 (redisdoc.com)](http://redisdoc.com/topic/cluster-tutorial.html) 
-
-gossip协议和故障迁移  https://zhuanlan.zhihu.com/p/106110578
 
 ### 消息队列
 

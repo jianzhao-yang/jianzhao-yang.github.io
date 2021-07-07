@@ -68,11 +68,10 @@
 
 1. 常用注解：@LoadBalanced
 
-### [eureka](eureka.md) 服务发现 
+### Eureka 服务发现
 
 1. 常用注解：@EnableDiscoveryClient
 2. 常用配置： 
-3. 
 
 ### Feign 服务调用
 
