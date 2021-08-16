@@ -15,7 +15,7 @@
 
 3. mybatis一二级缓存实现
 
-   - 一级缓存是sqlSession级别的,在同一个sqlSession中,两次相同的查询第二次会使用第一次查询缓存的结果
+   - 一级缓存是sqlSession级别的,在同一个sqlSession中,两次相同的查询第二次会使用第一次查询缓存的结果(在spring中,sqlsession是线程级别的)
    - 二级缓存是mapper级别的,同一mapper下的查询操作会缓存. 如果有其它服务/mapper同时操作数据库,会造成脏读(缓存和DB不一致)
 
 4. xml转换sql过程 
@@ -75,7 +75,7 @@
 11. mybatis 逻辑分页和物理分页的区别是什么？
 
         - 逻辑分页,全部数据查到内存后再处理
-
+    
         - 物理分页,直接使用limit关键字,在获取的时候就分页
 
 12. mybatis 是否支持延迟加载？延迟加载的原理是什么？
@@ -92,9 +92,9 @@
 14. mybatis 和 hibernate 的区别有哪些？
 
         1. hibernate是全自动，而mybatis是半自动（mybatis需要开发者编写sql语句，hibernate中封装了简单的增删改查可以不用编写操作数据库语句）
-
+    
         2. hibernate数据库移植性远大于mybatis（由于mybatis中SQL语句是我们自己编写的，不同数据库的操作语句又不同所以使用mybatis时 更换数据库很麻烦，而hibernate会自动根据不同的数据库生成不同的操作语句）
-
+    
         3. sql直接优化上，mybatis要比hibernate方便很多（mybatis是开发者编写的sql语句，优化上很方便，而hibernate是生成的sql无法直接优化，比较麻烦)
 
 15. mybatis 有哪些执行器（Executor）？
@@ -111,7 +111,7 @@
 17. mybatis 如何编写一个自定义插件？
 
         - 实现Interceptor接口的intercept方法，入参Invocation对象具体内容由类注解@Signature决定
-
+        
         - ```java
           public @interface Signature {
               Class<?> type(); // 决定Invocation的target
@@ -124,9 +124,9 @@
               private final Object[] args;
           }
           ```
-
+        
         - 只能拦截四种类型：
-
+        
           - Executor (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)          --执行sql
           - ParameterHandler (getParameterObject, setParameters)                     --获取、设置参数
           - ResultSetHandler (handleResultSets, handleOutputParameters)          --处理结果集
