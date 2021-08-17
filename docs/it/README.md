@@ -1,36 +1,32 @@
+# 自学整理
+
+---
+
+## 网络
+
+### 基础
+
+- [「网络IO套路」当时就靠它追到女友 (qq.com)](https://mp.weixin.qq.com/s/x-AZQO5uiuu5svIvScotzA)
+
+### socket编程
+
+### select/poll/epoll
+
+- [这次答应我，一举拿下 I/O 多路复用！ (qq.com)](https://mp.weixin.qq.com/s?__biz=MzUxODAzNDg4NQ==&mid=2247489558&idx=1&sn=7a96604032d28b8843ca89cb8c129154&scene=21#wechat_redirect)
+- [原来 8 张图，就能学废 Reactor 和 Proactor (qq.com)](https://mp.weixin.qq.com/s/px6-YnPEUCEqYIp_YHhDzg)
+
+### NIO
+
+### netty
+
+- [敖丙肝了一个月的Netty知识点 (qq.com)](https://mp.weixin.qq.com/s/I9PGsWo7-ykGf2diKklGtA)
+
+### dubbo
 
 
-### · Java学习网站推荐
-
-- https://crossoverjie.top/JCSprout/
-
-- https://snailclimb.gitee.io/javaguide/
 
 
-- http://cyc2018.gitee.io/cs-notes/#/README
 
-
-- https://doocs.github.io/advanced-java/
-
-
-### · 优秀博客推荐
-
-- [品茗IT-面试理论知识 (pomit.cn)](http://www.pomit.cn/trial/theory.html)
-- [ifeve](https://www.iteye.com/)
-- [美团技术团队 (meituan.com)](https://tech.meituan.com/)
-- [Akatsuki Sasori – 沉淀知识是在成长道路上的最正确的选择。 (liritian.com)](https://www.liritian.com/)
-- [一网打尽目录](https://blog.csdn.net/SnailMann/article/details/88392514)
-- [中间件兴趣圈博客目录](https://blog.csdn.net/prestigeding/article/details/109428961?spm=1001.2014.3001.5502)
-
-### 干货公众号推荐
-
-- labuladong
-- 小林coding
-- java3y
-- 中间件兴趣圈
-- 即时通讯技术圈
-
-### · 自学整理
 - ### [arthas-JVM诊断工具](https://alibaba.github.io/arthas/commands.html)
 
 
