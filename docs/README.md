@@ -24,6 +24,7 @@
 - [Akatsuki Sasori – 沉淀知识是在成长道路上的最正确的选择。 (liritian.com)](https://www.liritian.com/)
 - [一网打尽目录](https://blog.csdn.net/SnailMann/article/details/88392514)
 - [中间件兴趣圈博客目录](https://blog.csdn.net/prestigeding/article/details/109428961?spm=1001.2014.3001.5502)
+- [AobingJava/JavaFamily: 【Java面试+Java学习指南】 一份涵盖大部分Java程序员所需要掌握的核心知识。 (github.com)](https://github.com/AobingJava/JavaFamily)
 
 ### 干货公众号推荐
 
