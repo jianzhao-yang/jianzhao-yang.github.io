@@ -17,18 +17,101 @@
 
 ### NIO
 
+## 网络间通讯
+
 ### netty
 
 - [敖丙肝了一个月的Netty知识点 (qq.com)](https://mp.weixin.qq.com/s/I9PGsWo7-ykGf2diKklGtA)
 
 ### dubbo
 
+## java
+
+### java基础
+
+- ### [AQS](it/AQS.md)
+
+- ### [HashMap](it/hashMap.md)
+
+### java并发
+
+
+- ### [Synchronized](it/synchronized.md)
+
+### JVM模型
+
+- ### [JVM](it/JVM.md)
+- 
+### GC
+
+### 诊断
+- #### [arthas-JVM诊断工具](https://alibaba.github.io/arthas/commands.html)
+
+
+## web框架
+
+### spring
+
+- ### [Spring](it/spring.md)
+### springcloud
+
+### springcloud alibaba
+
+
+## 数据库
+
+### mybatis
+- ### [Mybatis](it/mybatis.md)
+
+### mysql
+- ### [Mysql](it/mysql.md)
+
+## 缓存
+
+### redis
+- #### [redis总结](it/redis.md)
+
+## 分布式
+
+### 配置中心
+
+#### apollo
+
+#### nacos
+
+### 注册中心
+
+#### eureka
+
+#### nacos
+
+### 限流
+
+#### hystrix
+
+#### sentinel
+
+## 消息队列
+
+### rabbitmq
+
+- [rabbitmq](it/rabbitmq.md)
+
+### rocketmq
+
+## 设计思想
+
+- ### [DDD思想深入浅出讲解](https://zhuanlan.zhihu.com/p/366395817)
+
+## 容器化
+
+### docker
+
+### k8s
 
 
 
-
-- ### [arthas-JVM诊断工具](https://alibaba.github.io/arthas/commands.html)
-
+## 面试
 
 - ### [个人总结面试题](it/interview-with-answer.md) 
 
@@ -39,34 +122,7 @@
 - ### [平安产险面试题总结](it/pinganchanxian.md)
 
 
-- ### [redis总结](it/redis.md)
-
-
-- ### [AQS](it/AQS.md)
-
-
-- ### [HashMap](it/hashMap.md)
-
-
-- ### [Mybatis](it/mybatis.md)
-
-
-- ### [Mysql](it/mysql.md)
-
-
-- ### [JVM](it/JVM.md)
-
-
-- ### [Synchronized](it/synchronized.md)
-
-
-- ### [Spring](it/spring.md)
-
-
-- ### [rabbitmq](it/rabbitmq.md)
-
-
-- ### [P7](it/ali-p7-stack.md)
+- ### [阿里P7技术栈](it/ali-p7-stack.md)
 
 
 - ### [Java技术栈资料](it/another-java-stack.md)
