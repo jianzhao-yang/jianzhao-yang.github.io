@@ -82,39 +82,21 @@
 
 35. [什么是线程安全?](https://www.jianshu.com/p/fc61770094a4)
 
-36. 父子线程怎么共享数据?
-
-    - 使用InheritableThreadLocal
-    - 原理: Thread构造方法中会有判断父线程inheritableThreadLocals是否为空,如果为空则浅复制父线程的对象
-
-37.  lock和synchronized的区别?
-
-    - |        | synchronize                       | lock                        |
-      | ------ | --------------------------------- | --------------------------- |
-      | 层次   | JVM层级                           | 类实现                      |
-      | 释放   | jvm自动释放                       | 需要在finally中手动释放     |
-      | 获取   | 如果锁被占用,需要一直等待         | 可以尝试获取锁,不用一直等待 |
-      | 状态   | 无法判断                          | 可以判断                    |
-      | 锁类型 | 可重入 非公平                     | 可重入 可公平               |
-      | 性能   | 1.8之前并发高性能低,1.8之后都不错 | 并发高时高性能              |
-
-      
-
-38. 并行和并发有什么区别？
+36. 并行和并发有什么区别？
 
     · 并发是一段时间内同时发生，并行是某个时间点同时运行
 
-39. 线程和进程的区别？
+37. 线程和进程的区别？
 
     - 进程是资源分配的最小单位，线程是程序执行的最小单位。
     - 进程有自己的独立地址空间，每启动一个进程，系统就会为它分配地址空间，建立数据表来维护代码段、堆栈段和数据段，这种操作非常昂贵。而线程是共享进程中的数据的，使用相同的地址空间，因此CPU切换一个线程的花费远比进程要小很多，同时创建一个线程的开销也比进程要小很多。
     - 线程之间的通信更方便，同一进程下的线程共享全局变量、静态变量等数据，而进程之间的通信需要以通信的方式（IPC)进行。不过如何处理好同步与互斥是编写多线程程序的难点。
 
-40. 守护线程是什么？
+38. 守护线程是什么？
 
     · 用于服务其他用户线程，当所有用户线程退出时，守护线程也自动退出
 
-41. 创建线程有哪几种方式？
+39. 创建线程有哪几种方式？
 
     · 继承Thread类
 
@@ -122,71 +104,39 @@
 
     · 实现Callable接口
 
-42. 说一下 runnable 和 callable 有什么区别？
+40. 说一下 runnable 和 callable 有什么区别？
 
     · 实现Runnable接口的线程执行后无返回值
 
     · 实现Callable接口的线程执行后有返回值
 
-43. 线程有哪些状态？
+41. 线程有哪些状态？
 
     ![](images\threadstates.jpg)
 
     · new、runnable、running、blocked、waiting/timed-waiting、dead
 
-44. [sleep()与wait()区别](https://blog.csdn.net/linfanhehe/article/details/78737685)？
+42. [sleep()与wait()区别](https://blog.csdn.net/linfanhehe/article/details/78737685)？
 
-    - sleep会自动唤醒，wait不会；
+    sleep会自动唤醒，wait不会；
 
-    - sleep不会释放锁，wait会；
+    sleep不会释放锁，wait会；
 
-    - wait只能在同步方法块中使用，sleep可以在任何地方使用；
+    wait只能在同步方法块中使用，sleep可以在任何地方使用；
 
-    - sleep属于Thread类，wait属于Object类；
+    sleep属于Thread类，wait属于Object类；
 
-45. sleep()、wait() 和 park() 的区别
-
-    |              | sleep                        | wait               | park                                  |
-    | ------------ | ---------------------------- | ------------------ | ------------------------------------- |
-    | 实现方式     |                              |                    |                                       |
-    | 线程状态     | timed_waiting                | waiting            | waiting                               |
-    | 是否响应中断 | 需要捕获interruptedException | 同左               | 不需要                                |
-    | 是否释放锁   | 否                           | 是                 | 否                                    |
-    | 唤醒信号     | 超时                         | wait必须先于notify | unpark可以先于park(但是最多只记录1次) |
-
-    -  [Thread.sleep、Object.wait、LockSupport.park 区别_u013332124的专栏-CSDN博客](https://blog.csdn.net/u013332124/article/details/84647915) 
-
-46. sleep(0)是什么作用? 和yield有区别吗?
-
-    - 在某些版本的JVM实现中,sleep(0)和yield是一样的. 都是放弃cpu时间片
-    - 区别: sleep(0)会将cpu让给任意优先级的线程,而yield只会让给同级或更高级的线程
-
-47. wait(timeout) 一定会在指定时间后返回吗？
-
-    - 不一定，即使到了指定时间，如果无法获取锁，方法仍会等待获取到锁之后才会返回
-
-48. wait()的正确使用方法
-
-    - ```java
-      synchronized (sharedObject) {
-      	while (condition) { //循环直到条件到了再唤醒
-      		sharedObject.wait();
-      		// (Releases lock, and reacquires on wakeup)
-          }
-      }
-      ```
-
-49. notify()和 notifyAll()有什么区别？
+43. notify()和 notifyAll()有什么区别？
 
     · notify只会通知一个在等待的对象，而notifyAll会通知所有在等待的对象
 
     · notifyAll唤醒的线程进入锁池后继续竞争，直到有一个获取锁之后其它线程继续等待
 
-50. 线程的 run()和 start()有什么区别？
+44. 线程的 run()和 start()有什么区别？
 
     · run只是普通方法，不会单起线程
 
-51. 创建线程池有哪几种方式？
+45. 创建线程池有哪几种方式？
 
     · 使用自带的Executors实现
 
@@ -211,11 +161,11 @@
                                   RejectedExecutionHandler handler)//队列满之后处理逻辑
     ```
 
-52. [线程池都有哪些状态？](https://blog.csdn.net/u011389515/article/details/80656813)
+46. [线程池都有哪些状态？](https://blog.csdn.net/u011389515/article/details/80656813)
 
     · Running、ShutDown、Stop、Tidying、Terminated
 
-53. 线程池中 submit()和 execute()方法有什么区别？
+47. 线程池中 submit()和 execute()方法有什么区别？
 
     · submit()方法，可以提供Future < T > 类型的返回值；execut()方法，无返回值
 
@@ -223,7 +173,7 @@
 
     · excute入参Runnable；submit入参可以为Callable，也可以为Runnable
 
-54. 在 java 程序中怎么保证多线程的运行安全？
+48. 在 java 程序中怎么保证多线程的运行安全？
 
     ```java
     线程的安全性问题体现在：
@@ -242,11 +192,11 @@
     Happens-Before 规则可以解决有序性问题
     ```
 
-55. 多线程锁的升级原理是什么？
+49. 多线程锁的升级原理是什么？
 
     · 从轻到重： [无锁 -> 偏向锁(独占) -> 轻量级锁(自旋等待) -> 重量级锁(MutexLock互斥锁)](https://www.liangzl.com/get-article-detail-135712.html)
 
-56. 什么是死锁？怎么防止死锁？
+50. 什么是死锁？怎么防止死锁？
 
     · [死锁](https://www.cnblogs.com/bopo/p/9228834.html)
 
@@ -257,21 +207,21 @@
     - 不可剥夺条件: 进程所获得的资源在未使用完毕之前，不能被其他进程强行夺走，即只能 由获得该资源的进程自己来释放（只能是主动释放)。
     - 循环等待条件: 若干进程间形成首尾相接循环等待资源的关系
 
-57. ThreadLocal 是什么？有哪些使用场景？
+51. ThreadLocal 是什么？有哪些使用场景？
 
     · ThreadLocal是一种解决并发问题的思路，即为每个线程都创建一个新的副本，从而保证线程间不会互相干扰
 
     · 实现原理为：Thread类里保存一个ThreadLocalMap，该线程的所有ThreadLocal对象都保存在这里，随线程退出而清除
 
-58. [说一下synchronized底层实现原理](https://baijiahao.baidu.com/s?id=1612142459503895416&wfr=spider&for=pc)
+52. [说一下synchronized底层实现原理](https://baijiahao.baidu.com/s?id=1612142459503895416&wfr=spider&for=pc)
 
-59. synchronized 和 volatile 的区别是什么？
+53. synchronized 和 volatile 的区别是什么？
 
     · volatile只能作用于变量，使用范围较小。synchronized可以用在变量、方法、类、同步代码块等，使用范围比较广。 
     · volatile只能保证可见性和有序性，不能保证原子性。而可见性、有序性、原子性synchronized都可以包证。 
     · volatile不会造成线程阻塞。synchronized可能会造成线程阻塞。
 
-60. synchronized 和 Lock/ReentrantLock  有什么区别？
+54. synchronized 和 Lock/ReentrantLock  有什么区别？
 
     · 实现层面不一样。synchronized 是 Java 关键字，JVM层面 实现加锁和释放锁；Lock 是一个接口，在代码层面实现加锁和释放锁
     · 是否自动释放锁。synchronized 在线程代码执行完或出现异常时自动释放锁；Lock 不会自动释放锁，需要再 finally {} 代码块显式地中释放锁
@@ -281,12 +231,12 @@
 
     · ReentrantLock使用Condition进行多条件应用
 
-61. ReentrantLock底层实现原理？
+55. ReentrantLock底层实现原理？
 
     - 实现了Lock接口，内部维护一个Sync对象，Sync是ReentrantLock各个方法真正的实现
     - Sync是AQS（AbstractQueuedSynchronizer）的一个子类，又有两个子类NoFairSync和FairSync，分别实现了非公平锁和公平锁的方法。AQS其实没有需要实现的方法，仅仅只是类名有abstract而已
-
-62. synchronized底层实现原理（字节码指令）？
+    
+56. synchronized底层实现原理（字节码指令）？
 
     - 字节码指令：
       - 用在方法上：ACC_SYNCHRONIZED
@@ -310,12 +260,12 @@
 
       
 
-63. UnSafe为什么不安全？
+57. UnSafe为什么不安全？
 
     - 底层是C++实现，直接使用了内存偏移，不合理的使用会导致程序运行与预期不符合
     - 虽然在内部根据classloader进行了限制，但是仍然可以使用反射获取并进行操作
 
-64. 说一下 atomic 的原理？ https://www.jianshu.com/p/84c75074fa03
+58. 说一下 atomic 的原理？ https://www.jianshu.com/p/84c75074fa03
 
     · 通过UnSafe类的CAS操作保证原子性
 
@@ -433,25 +383,21 @@
 
 ### - JVM
 
-194. 总线风暴
-
-     -  [每日一个知识点：Volatile 和 CAS 的弊端之总线风暴 - 架构技术专栏 - 博客园 (cnblogs.com)](https://www.cnblogs.com/jiagoujishu/p/13744544.html) 
-
-195. 说一下 jvm 的主要组成部分？及其作用？
+194. 说一下 jvm 的主要组成部分？及其作用？
 
      ![jvm](images\jvm.png)
 
-196. 对象结构？
+195. 对象结构？
 
      - 对象头： 由两部分组成，第一部分存储对象自身的运行时数据：哈希码、GC分代年龄、锁标识状态、线程持有的锁、偏向线程ID（一般占32/64 bit）。第二部分是指针类型，指向对象的类元数据类型（即对象代表哪个类）。如果是数组对象，则对象头中还有一部分用来记录数组长度。
      - 实例数据： 用来存储对象真正的有效信息（包括父类继承下来的和自己定义的）
      - 对齐填充：JVM要求对象起始地址必须是8字节的整数倍（8字节对齐）
 
-197. Java对象的定位方式？
+196. Java对象的定位方式？
 
      - 句柄池、直接指针。
 
-198. 创建对象的步骤？
+197. 创建对象的步骤？
 
      - **类加载机制检查**：首先检查是否已加载对应的lass类
      - **分配内存**：采用指针碰撞、空闲列表或TLAB进行分配
@@ -459,14 +405,14 @@
      - **设置对象头：**存储对象自身的运行时数据，类型指针
      - **执行<init>**：为对象的字段赋值
 
-199. 说一下类加载的执行过程？
+198. 说一下类加载的执行过程？
 
-     ![类加载过程](images/load.png)
+     ![类加载过程](E:/project/github/jianzhao-yang.github.io/docs/it/images/load.png)
 
      - 加载，查找并加载类的二进制数据，在Java堆中也创建一个java.lang.Class类的对象
      - 连接，连接又包含三块内容：验证、准备、初始化。 
        - 1）验证，文件格式、元数据、字节码、符号引用验证； 
-       - 2）准备，为类的静态变量分配内存，并将其初始化为各类型的初始值；常量直接设为指定值 
+       - 2）准备，为类的静态变量分配内存，并将其初始化为默认值； 
        - 3）解析，把类中的符号引用转换为直接引用
      - 初始化，为类的静态变量赋予正确的初始值
      - 使用，new出对象程序中使用
@@ -474,11 +420,11 @@
 
      [深入浅出Java类加载过程](https://www.cnblogs.com/luohanguo/p/9469851.html)
 
-200. 说一下 jvm 运行时数据区？
+199. 说一下 jvm 运行时数据区？
 
      · [JVM运行时数据区和Java内存模型](https://www.jianshu.com/p/2cdd069a4d5f)
 
-201. 什么是符号引用？什么是直接引用？
+200. 什么是符号引用？什么是直接引用？
 
      - 符号引用以一组符号来描述所引用的目标，符号可以是任何形式的字面量，只要使用时能够无歧义的定位到目标即可。主要是因为在编译时无法确定依赖对象的实际内存地址，只能使用符合引用指代
 
@@ -490,19 +436,19 @@
 
        （3）一个能间接定位到目标的句柄
 
-202. 说一下堆栈的区别？
+201. 说一下堆栈的区别？
 
      · 堆是所有线程共享一个的，栈是每个线程都有一个的
 
      · 堆用来存放对象和数组，栈用来存放方法和局部变量
 
-203. 队列和栈是什么？有什么区别？
+202. 队列和栈是什么？有什么区别？
 
      · 队列先进先出，栈先进后出
 
      · 队列遍历速度更快
 
-204. 什么是双亲委派模型？
+203. 什么是双亲委派模型？
 
      ![类加载器结构](/images/classloader.png)
 
@@ -515,13 +461,13 @@
 
      [为什么说java spi破坏双亲委派模型？](https://www.zhihu.com/question/49667892?sort=created)
 
-205. 怎么判断对象是否可以被回收？
+204. 怎么判断对象是否可以被回收？
 
      · 根据GCRoots进行可达性分析，不可达即可回收
 
      · GCRoots:栈中引用的对象、静态属性引用的对象、常量池中引用的对象
 
-206. java 中都有哪些引用类型？
+205. java 中都有哪些引用类型？
 
      · 强引用：正常引用
 
@@ -533,7 +479,7 @@
 
      · [四种引用类型](https://www.cnblogs.com/liyutian/p/9690974.html)
 
-207. 说一下 jvm 有哪些垃圾回收算法？
+206. 说一下 jvm 有哪些垃圾回收算法？
 
      · 分代回收算法
 
@@ -912,83 +858,42 @@
 
        - #{}是预编译处理,${}是字符串替换
 
-127. mybatis一二级缓存实现
+127. mybatis执行流程？
 
-     - 一级缓存是sqlSession级别的,在同一个sqlSession中,两次相同的查询第二次会使用第一次查询缓存的结果
-     - 二级缓存是mapper级别的,同一mapper下的查询操作会缓存. 如果有其它服务/mapper同时操作数据库,会造成脏读(缓存和DB不一致)
-
-128. xml转换sql过程 
-
-     1.   Configuration类加载mapper
-     2.  XMLMapperBuilder解析xml下的所有节点
-     3.  XMLStatementBuilder 解析xml中的单个节点
-     4.   XMLScriptBuilder 构建sql语句
-     5.  MappedStatement表示的是XML中的一个SQL 
-
-129. mapper和namespace的作用和区别
-
-     - 在mybatis中，映射文件中的namespace是用于绑定Dao接口的，即面向接口编程。
-     - 当你的namespace绑定接口后，你可以不用写接口实现类，mybatis会通过该绑定自动，帮你找到对应要执行的SQL语句。
-
-130. mybatis的二级缓存失效是以什么为基本单位进行管理的?
-
-     -  mybatis的[二级缓存](https://www.baidu.com/s?wd=二级缓存&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao)，进行增删改操时作会清空当前[命名空间](https://www.baidu.com/s?wd=命名空间&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao)中已缓存的数据。也就是说，缓存机制是以[命名空间](https://www.baidu.com/s?wd=命名空间&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao)为单位进行管理的。 
-
-131. mybatis执行流程
-
-     1. config文件解析
-
-        -  ->SqlSessionFactoryBuilder.build()
-        -  --使用 XMLConfigBuilder.parse()解析mybatis-config.xml，生成 Configuration
-
-        -  <-返回带有Configuration属性的DefautSqlSessionFactory对象
-
-     2.  使用SqlSessionFactory对象调用openSession获取SqlSession
-
-     3.  SqlSession.getMapper 拿到Mapper对象的代理 
-
-     4.  通过MapperProxy调用Maper中相应的方法
-
-        - SqlSessioon创建executor,executor是对jdbc的封装,有simpleExecutor、batchExecutor、reuseExecutor等。 
-        - executor构建StatementHandler，StatementHandler的作用
-        - 使用ParameterHandler，对sql进行预处理;
-        - 调用statement.executeXxx()执行sql；
-        - 使用ResultSetHandler将数据库返回的结果集进行对象转换（ORM）；
-
-132. 返回创建SqlSessionFactory对象
+128. 返回创建SqlSessionFactory对象
        2. 返回SqlSession的实现类DefaultSqlSession对象
        3. 返回一个MapperProxy的代理对象
        4.  执行CRUD流程。
 
-133. mybatis 有几种分页方式？
+129. mybatis 有几种分页方式？
        - limit
        - query(String userName, RowBounds rowBounds)
        - 实现拦截器
        - PageHelper
 
-134. RowBounds 是一次性查询全部结果吗？为什么？
+130. RowBounds 是一次性查询全部结果吗？为什么？
 
        - RowBounds是一次性查询全部结果
        - 从RowBounds源码看出，RowBounds最大数据量为Integer.MAX_VALUE(2147483647)
 
-135. mybatis 逻辑分页和物理分页的区别是什么？
+131. mybatis 逻辑分页和物理分页的区别是什么？
 
        - 逻辑分页,全部数据查到内存后再处理
 
        - 物理分页,直接使用limit关键字,在获取的时候就分页
 
-136. mybatis 是否支持延迟加载？延迟加载的原理是什么？
+132. mybatis 是否支持延迟加载？延迟加载的原理是什么？
 
        - 延迟加载即当sql为一对一/一对多关联时,关联数据只有在使用的时候才查出来
        - 支持,设置lazyLoadingEnabled=true 即可
        - 原理是返回的对象是cglib生成的子类,调用相关子对象时会被拦截,再去查询
 
-137. 说一下 mybatis 的一级缓存和二级缓存？
+133. 说一下 mybatis 的一级缓存和二级缓存？
 
        - 一级缓存基于SqlSession
        - 二级缓存基于namespace
 
-138. mybatis 和 hibernate 的区别有哪些？
+134. mybatis 和 hibernate 的区别有哪些？
 
        1. hibernate是全自动，而mybatis是半自动（mybatis需要开发者编写sql语句，hibernate中封装了简单的增删改查可以不用编写操作数据库语句）
 
@@ -996,18 +901,18 @@
 
        3. sql直接优化上，mybatis要比hibernate方便很多（mybatis是开发者编写的sql语句，优化上很方便，而hibernate是生成的sql无法直接优化，比较麻烦)
 
-139. mybatis 有哪些执行器（Executor）？
+135. mybatis 有哪些执行器（Executor）？
 
        - SimpleExecutor：每执行一次update或select，就开启一个Statement对象，用完立刻关闭Statement对象
        - ReuseExecutor：重复使用Statement对象
        - BatchExecutor：执行update（没有select，JDBC批处理不支持select），将所有sql都添加到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个Statement对象，每个Statement对象都是addBatch()完毕后，等待逐一执行executeBatch()批处理。与JDBC批处理相同。
 
-140. mybatis 分页插件的实现原理是什么？
+136. mybatis 分页插件的实现原理是什么？
 
        - PageHelper通过`ThreadLocal`来存放分页信息，从而可以做到在Service层实现无侵入性的Mybatis分页实现
        - [MyBatis之分页插件(PageHelper)工作原理](https://www.cnblogs.com/dengpengbo/p/10579631.html)
 
-141. mybatis 如何编写一个自定义插件？
+137. mybatis 如何编写一个自定义插件？
 
        - 实现Interceptor接口的intercept方法，入参Invocation对象具体内容由类注解@Signature决定
 
@@ -1123,41 +1028,6 @@
 181. mysql 问题排查都有哪些手段？
 
 182. 如何做 mysql 的性能优化？
-
-183. 什么是聚簇索引和非聚簇索引?
-
-     - InnoDB**聚集索引**的叶子节点存储行记录，因此， InnoDB必须要有，且只有一个聚集索引：
-
-       （1）如果表定义了PK(**主键**)，则PK就是聚集索引；
-
-       （2）如果表没有定义PK，则第一个not NULL unique列是聚集索引；
-
-       （3）否则，InnoDB会创建一个隐藏的row-id作为聚集索引；
-
-       *画外音：所以PK查询非常快，直接定位行记录。*
-
-     - InnoDB非聚簇索引(**普通索引**)的叶子节点存储主键值。
-
-       *画外音：注意，不是存储行记录头指针，MyISAM的索引叶子节点存储记录指针。*
-
-184. 什么是mysql的回表?
-
-     - 如果查询的字段有不在索引上的(不是单一索引键),则需要先根据非聚簇索引查询到主键值,再根据主键查询聚簇索引找到行记录.
-
-185. 什么是索引覆盖?
-
-     - 查询的字段都在某一条索引上的时候,mysql只用查询一次索引即可找到记录,不用回表查询行记录.成为索引覆盖
-
-186. 如何计算innodb中B+树的高度?
-
-     - 使用show variables like 'innodb_page_size';查看页大小默认是16k
-     - 一个非叶子节点大概包含头、尾、预留空隙（20%左右），剩余用来存储键数据（行记录+左右指针）
-     - B+树一个非叶子节点大小16K大概能存储500个键数据,一般B+树高度为3~5
-
-187. mysql一次查询要读取几次磁盘?
-
-     - innodb会将B+树索引根节点缓存在内存里,所以一次查询索引大概需要2~4次
-     - 如果不是索引覆盖和主键查找，则需要回表,则*2需要4~8次
 
 ### - Redis
 
