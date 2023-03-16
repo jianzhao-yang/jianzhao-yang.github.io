@@ -343,43 +343,39 @@
 
 41. curator锁类型
 
-
-    - **zookeper的实现主要有下面四类类:**
+- **zookeper的实现主要有下面四类类:**
       - InterProcessMutex：分布式可重入排它锁
-      - InterProcessSemaphoreMutex：分布式不可重入排它锁
-      - InterProcessReadWriteLock：分布式可重入读写锁
-      - InterProcessMultiLock：将多个锁作为单个实体管理的容器
+          - InterProcessSemaphoreMutex：分布式不可重入排它锁
+          - InterProcessReadWriteLock：分布式可重入读写锁
+          - InterProcessMultiLock：将多个锁作为单个实体管理的容器
 
 42. zookeeper的选举机制
 
-
-    - 节点状态
+- 节点状态
+     - **Looking** ：选举状态。
+  - **Following** ：Follower节点（从节点）所处的状态。
+  - **Leading** ：Leader节点（主节点）所处状态。
+  - 崩溃恢复
+  
+    -  **Leader election**
     
-      - **Looking** ：选举状态。
-      - **Following** ：Follower节点（从节点）所处的状态。
-      - **Leading** ：Leader节点（主节点）所处状态。
-    - 崩溃恢复
+      - 选举阶段，此时集群中的节点处于Looking状态。它们会各自向其他节点发起投票，投票当中包含自己的服务器ID和最新事务ID（ZXID） 
+      -  接下来，节点会用自身的ZXID和从其他节点接收到的ZXID做比较，如果发现别人家的ZXID比自己大，也就是数据比自己新，那么就重新发起投票，**投票给目前已知最大的ZXID所属节点。** （ zxid相同就比较myid大小，myid大的作为leader服务器）
+      -  每次投票后，服务器都会统计投票数量，判断是否有某个节点得到**半数**以上的投票。如果存在这样的节点，该节点将会成为**准Leader**，状态变为Leading。其他节点的状态变为Following。 
+    -  **Discovery** 
     
-      -  **Leader election**
+      - 为了防止某些意外情况，比如因网络原因在上一阶段产生多个Leader的情况。
+      - 所以这一情况，Leader集思广益，接收所有Follower发来各自的最新epoch值。Leader从中选出最大的epoch，基于此值加1，生成新的epoch分发给各个Follower。
+      - 各个Follower收到全新的epoch后，返回ACK给Leader，带上各自最大的ZXID和历史事务日志。Leader选出最大的ZXID，并更新自身历史日志。
+    -  **Synchronization** 
     
-        - 选举阶段，此时集群中的节点处于Looking状态。它们会各自向其他节点发起投票，投票当中包含自己的服务器ID和最新事务ID（ZXID） 
-        -  接下来，节点会用自身的ZXID和从其他节点接收到的ZXID做比较，如果发现别人家的ZXID比自己大，也就是数据比自己新，那么就重新发起投票，**投票给目前已知最大的ZXID所属节点。** （ zxid相同就比较myid大小，myid大的作为leader服务器）
-        -  每次投票后，服务器都会统计投票数量，判断是否有某个节点得到**半数**以上的投票。如果存在这样的节点，该节点将会成为**准Leader**，状态变为Leading。其他节点的状态变为Following。 
-      -  **Discovery** 
-    
-        - 为了防止某些意外情况，比如因网络原因在上一阶段产生多个Leader的情况。
-        - 所以这一情况，Leader集思广益，接收所有Follower发来各自的最新epoch值。Leader从中选出最大的epoch，基于此值加1，生成新的epoch分发给各个Follower。
-        - 各个Follower收到全新的epoch后，返回ACK给Leader，带上各自最大的ZXID和历史事务日志。Leader选出最大的ZXID，并更新自身历史日志。
-      -  **Synchronization** 
-    
-        -  同步阶段，把Leader刚才收集得到的最新历史事务日志，同步给集群中所有的Follower。只有当半数Follower同步成功，这个准Leader才能成为正式的Leader。 
-    - 数据写入
-    
-      - 客户端发出写入数据请求给任意Follower。
-      - Follower把写入数据请求转发给Leader。
-      - Leader采用**二阶段提交**方式，先发送Propose广播给Follower。
-      - Follower接到Propose消息，写入日志成功后，返回ACK消息给Leader。
-      - Leader接到半数以上ACK消息，返回成功给客户端，并且广播Commit请求给Follower。
+      -  同步阶段，把Leader刚才收集得到的最新历史事务日志，同步给集群中所有的Follower。只有当半数Follower同步成功，这个准Leader才能成为正式的Leader。 
+  - 数据写入
+    -  客户端发出写入数据请求给任意Follower。
+    -  Follower把写入数据请求转发给Leader。
+    -  Leader采用**二阶段提交**方式，先发送Propose广播给Follower。
+    -  Follower接到Propose消息，写入日志成功后，返回ACK消息给Leader。
+    -  Leader接到半数以上ACK消息，返回成功给客户端，并且广播Commit请求给Follower。
 
 43. ZXID是啥 
 
