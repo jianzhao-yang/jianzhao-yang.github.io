@@ -4,6 +4,10 @@
 
 ## 网络
 
+### TCP
+
+[TCP](it/network.md)
+
 ### 基础
 
 - [「网络IO套路」当时就靠它追到女友 (qq.com)](https://mp.weixin.qq.com/s/x-AZQO5uiuu5svIvScotzA)
@@ -69,7 +73,11 @@
 ## 缓存
 
 ### redis
-- #### [redis总结](it/redis.md)
+- #### [redis数据结构](it/redis/redis-data-structure.md)
+
+- [redis集群](it/redis/redis-cluster.md)
+
+- [redis网络](it/redis/redis-network.md)
 
 ## 分布式
 

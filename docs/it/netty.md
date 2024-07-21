@@ -92,15 +92,16 @@ https://www.cnblogs.com/liugp/p/10962047.html
 ### 优点
 
 - 良好的跨平台性
-- 延时低
+- 1024大小的数组，遍历速度快，延时低
 
 ### 缺点
 
 - 每次调用select，都需要把fd集合从用户态**拷贝**到内核态，这个开销在fd很多时会很大
 - 同时每次调用select都需要在内核**遍历**传递进来的所有fd，这个开销在fd很多时也很大
 - select支持的文件描述符数量太小了，默认是1024
+- 返回时无法知道是哪些fd就绪，需要遍历数组获取
 
-```
+```c
 int select (int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
 ```
 
@@ -114,10 +115,16 @@ select 目前几乎在所有的平台上支持，其良好跨平台支持也是�
 
 ### 优点
 
-- 使用链表储存,去除了最大文件描述符限制
+- 调用时传入fd数组，内核使用链表储存,去除了最大文件描述符限制
 - 其它跟select无区别
 
-```
+缺点
+
+- 也无法知道是哪些fd就绪
+- fd很多时，链表遍历效率低
+
+```c
+// *fds 事件数组；nfds 元素个数；timeout 超时； 返回就绪数量
 int poll (struct pollfd *fds, unsigned int nfds, int timeout);
 ```
 
@@ -125,13 +132,15 @@ int poll (struct pollfd *fds, unsigned int nfds, int timeout);
 
 不同与 select 使用三个位图来表示三个 fdset 的方式，poll 使用一个 pollfd 的指针实现。
 
-```
+```c
 struct pollfd {
-    int fd; /* file descriptor */
-    short events; /* requested events to watch */
-    short revents; /* returned events witnessed */
+    int fd; /* 文件描述符 */
+    short events; /* 监听事件 */
+    short revents; /* 实际返回事件 */
 };
 ```
+
+事件类型：可读、可写、错误、fd未打开
 
 pollfd 结构包含了要监视的 event 和发生的 event，不再使用 select“参数 - 值” 传递的方式。同时，pollfd 并没有最大数量限制（但是数量过大后性能也是会下降）。 和 select 函数一样，poll 返回后，需要轮询 pollfd 来获取就绪的描述符。
 
@@ -156,15 +165,18 @@ epoll 是在 2.6 内核中提出的，是之前的 select 和 poll 的增强版�
 
 ### 一 epoll 操作过程
 
-
-
 epoll 操作过程需要三个接口，分别如下：
 
-
-
-```
-int epoll_create(int size)；//创建一个epoll的句柄，size用来告诉内核这个监听的数目一共有多大
+```c
+struct eventpoll {
+    struct rbr_root rbr;// 红黑树记录要监听的fd
+    struct list_head rdlist; // 链表，记录就绪的fd
+}
+//创建一个eventpoll的句柄，size用来告诉内核这个监听的数目一共有多大(建议值)，返回eventpoll句柄epfd
+int epoll_create(int size)；
+// epdf:要操作的epoll,op：操作类型（增删改），fd：要操作的fd，event：事件类型；返回-1表示异常，0表示成功
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)；
+// epfd:监听句柄，*events: 空数组用于内核赋值返回就绪列表，最大数量，超时时间（-1永不超时，0不阻塞，其他超时时间）；返回就绪数量
 int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
 ```
 
@@ -178,6 +190,7 @@ int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout
 
 **2. int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)；**
 函数是对指定描述符 fd 执行 op 操作。
+
 - epfd：是 epoll_create() 的返回值。
 - op：表示 op 操作，用三个宏来表示：添加 EPOLL_CTL_ADD，删除 EPOLL_CTL_DEL，修改 EPOLL_CTL_MOD。分别添加、删除和修改对 fd 的监听事件。
 - fd：是需要监听的 fd（文件描述符）
@@ -185,7 +198,7 @@ int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout
 
 
 
-```
+```c
 struct epoll_event {
   __uint32_t events;  /* Epoll events */
   epoll_data_t data;  /* User data variable */
@@ -213,17 +226,27 @@ EPOLLONESHOT：只监听一次事件，当监听完这次事件之后，如果�
 
 　epoll 对文件描述符的操作有两种模式：**LT（level trigger）**和 **ET（edge trigger）**。LT 模式是默认模式，LT 模式与 ET 模式的区别如下：
 　　**LT 模式**：当 epoll_wait 检测到描述符事件发生并将此事件通知应用程序，`应用程序可以不立即处理该事件`。下次调用 epoll_wait 时，会再次响应应用程序并通知此事件。
-　　**ET 模式**：当 epoll_wait 检测到描述符事件发生并将此事件通知应用程序，`应用程序必须立即处理该事件`。如果不处理，下次调用 epoll_wait 时，不会再次响应应用程序并通知此事件。
+　　**ET 模式**：当 epoll_wait 检测到描述符事件发生并将此事件通知应用程序，`应用程序必须立即处理该事件且完全读取数据`。如果不处理，下次调用 epoll_wait 时，不会再次响应应用程序并通知此事件。即使fd中数据未完毕，也不会再通知
 
 #### 1. LT 模式
 
 LT(level triggered) 是缺省的工作方式，并且同时支持 block 和 no-block socket. 在这种做法中，内核告诉你一个文件描述符是否就绪了，然后你可以对这个就绪的 fd 进行 IO 操作。如果你不作任何操作，内核还是会继续通知你的。
+
+LT问题：
+
+- 多次通知影响性能
+- 惊群效应，多个线程同时监听一个epoll，有就绪时会通知所有线程
 
 #### 2. ET 模式
 
 ET(edge-triggered) 是高速工作方式，只支持 no-block socket。在这种模式下，当描述符从未就绪变为就绪时，内核通过 epoll 告诉你。然后它会假设你知道文件描述符已经就绪，并且不会再为那个文件描述符发送更多的就绪通知，直到你做了某些操作导致那个文件描述符不再为就绪状态了 (比如，你在发送，接收或者接收请求，或者发送接收的数据少于一定量时导致了一个 EWOULDBLOCK 错误）。但是请注意，如果一直不对这个 fd 作 IO 操作 (从而导致它再次变成未就绪)，内核不会发送更多的通知 (only once)
 
 ET 模式在很大程度上减少了 epoll 事件被重复触发的次数，因此效率要比 LT 模式高。epoll 工作在 ET 模式的时候，必须使用非阻塞套接口，以避免由于一个文件句柄的阻塞读 / 阻塞写操作把处理多个文件描述符的任务饿死。
+
+使用ET实现LT：
+
+- 得到就绪句柄后，处理部分数据，处理完再手动通过epoll_ctl将句柄加回epoll中
+- 得到就绪句柄后，一次性读完，并且在没有数据时立即返回不阻塞
 
 #### 3. 总结
 
@@ -245,7 +268,7 @@ ET 模式在很大程度上减少了 epoll 事件被重复触发的次数，因�
 
 
 
-```
+```c
 while(rs){
   buflen = recv(activeevents[i].data.fd, buf, sizeof(buf), 0);
   if(buflen < 0){
@@ -334,6 +357,12 @@ write(socket, tmp_buf, len);
 4. 最后将 kernel 模式下的 socket buffer 的数据 copy 到网卡设备中；（send 套接字调用返回）
 
 从图中看 2，3 两次 copy 是多余的，数据从 kernel 模式到 user 模式走了一圈，浪费了 2 次 copy。
+
+效率低的原因：
+
+- 内核和用户态切换
+- 数据等待
+- 数据拷贝
 
 
 

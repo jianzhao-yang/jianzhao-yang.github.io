@@ -1,213 +1,4 @@
-# redis常见问题汇总
-
-## redis数据结构
-
-#### redis对象结构体
-
-### 基础结构
-
-#### redis中的对象
-
-```C
-/*
- * Redis 对象
- */
-typedef struct redisObject {
-    // 5种数据类型 4bits
-    unsigned type:4;
-    // 数据的编码方式 4bits
-    unsigned encoding:4;
-    // LRU 时间（相对于 server.lruclock） 24bits
-    unsigned lru:22;
-    // 引用计数 Redis里面的数据可以通过引用计数进行共享 32bits
-    int refcount;
-    // 指向对象的值 64-bit
-    void *ptr;
-} robj;// 16bytes
-```
-
-#### redis数据的编码方式
-
-![](http://www.yund.tech/yund-cms/sys/common/view/files/20200403/d58a27f7-6cb2-4a2b-bb23-44a9e3801ff7.png)
-
-```
- REDIS_ENCODING_INT（long 类型的整数）
- REDIS_ENCODING_EMBSTR embstr （编码的简单动态字符串）
- REDIS_ENCODING_RAW （简单动态字符串）
- REDIS_ENCODING_HT （字典）
- REDIS_ENCODING_LINKEDLIST （双端链表）
- REDIS_ENCODING_ZIPLIST （压缩列表）
- REDIS_ENCODING_INTSET （整数集合）
- REDIS_ENCODING_SKIPLIST （跳跃表和字典）
-```
-
-#### StringObject 简单动态字符串
-
-```C
-struct sdshdr{
-     //记录buf数组中已使用字节的数量
-     //等于 SDS 保存字符串的长度 4byte
-     int len;
-     //记录 buf 数组中未使用字节的数量 4byte
-     int free;
-     //字节数组，用于保存字符串 字节\0结尾的字符串占用了1byte
-     char buf[];
-}
-```
-
-#### ziplist 压缩表
-
-##### 简介
-
-- 压缩列表是Redis为了节约内存而开发的，由一系列特殊编码的连续内存块组成的顺序型数据结构。一个压缩列表可以包含任意多个节点，每个节点可以保存一个字节数组或者一个整数值。
-- 压缩列表是一段连续内存组成的空间，与数组相比，单个元素长度不用保持一致；与链表相比，连续内存效率更高，且不用保存指针节省了内存
-- 用于节点数较少的hash和list
-
-##### 数据结构
-
-- 压缩列表结构
-  - zlbytes：记录整个压缩列表占用的内存字节数。
-  - zltail：记录压缩列表表尾节点距离压缩列表起始地址有多少字节。（用于快速找到尾节点）
-  - zllen：记录了压缩列表包含的节点数量。
-  - entryN：压缩列表的数据节点，节点长度由节点保存的内容决定。
-  - zlend：特殊值0xFF（十进制255），用于标记压缩列表的末端。
-- 数据节点entry结构
-  - previous_entry_length 记录上一个节点的长度（用于反向遍历）
-  - encoding 记录节点的数据类型和数据长度
-  - contents 记录数据
-
-#### skiplist 跳跃表
-
-##### 数据结构
-
-```c
-/**
- * 有序集合结构体
- */
-typedef struct zset {
-    /*
-     * Redis 会将跳跃表中所有的元素和分值组成 
-     * key-value 的形式保存在字典中
-     * todo：注意：该字典并不是 Redis DB 中的字典，只属于有序集合
-     */
-    dict *dict;
-    /*
-     * 底层指向的跳跃表的指针
-     */
-    zskiplist *zsl;
-} zset;
-
-/**
- * 跳跃表结构体
- */
-typedef struct zskiplist {
-    struct zskiplistNode *header, *tail;
-    unsigned long length;
-    int level;
-} zskiplist;
-
-/**
- * ZSETs use a specialized version of Skiplists
- * 跳跃表中的数据节点
- */
-typedef struct zskiplistNode {
-    sds ele;
-    // 分值
-    double score;
-    // 后退指针
-    struct zskiplistNode *backward;
-    // 层
-    struct zskiplistLevel {
-        // 前进指针
-        struct zskiplistNode *forward;
-        /**
-         * 跨度实际上是用来计算元素排名(rank)的，
-         * 在查找某个节点的过程中，将沿途访过的所有层的跨度累积起来，
-         * 得到的结果就是目标节点在跳跃表中的排位
-         */
-        unsigned long span;
-    } level[];
-} zskiplistNode;
-```
-
-- 参考  [死磕Redis5.0之跳跃表 - 简书 (jianshu.com)](https://www.jianshu.com/p/c2841d65df4c) 
-- 
-
-
-
-#### String
-
-##### 编码方式
-
-- int：8个字节的长整型
-- embstr：小于等于39个字节的字符串
-- raw：大于39个字节的字符串
-
-##### embstr
-
-embstr 是专门用于保存短字符串的一种优化编码方式，跟正常的字符编码相比，字符编码会调用两次内存分配函数来分别创建 redisObject 和 sdshdr 结构（动态字符串结构），而 embstr 编码则通过调用一次内存分配函数来分配一块连续的内存空间，空间中包含 redisObject 和 sdshdr（动态字符串）两个结构，两者在同一个内存块中。从 Redis 3.0 版本开始，字符串引入了 embstr 编码方式，长度小于 OBJ_ENCODING_EMBSTR_SIZE_LIMIT(39) 的字符串将以EMBSTR方式存储。
-
-**注意**： 在Redis 3.2 之后，就不是以 39 为分界线，而是以 44 为分界线，主要与 Redis 中内存分配使用的是 jemalloc 有关。（ jemalloc 分配内存的时候是按照 8、16、32、64 作为 chunk 的单位进行分配的。为了保证采用这种编码方式的字符串能被 jemalloc 分配在同一个 chunk 中，该字符串长度不能超过64，故字符串长度限制
-
-- 为什么在3.2版本之后,embstr字符串大小限制从39变为了44?
-  - jemalloc 内存分配为64个字节一组
-  - 3.2时redis底层将sdshdr拆分为sdshdr5、sdshdr8、sdshdr16、sdshdr32（等同于原sdshdr）、sdshdr64，并且添加一个flag字段标识数据类型
-  - 3.0时，可用str长度为： 64 - redisObject大小（16）- sdshdr大小（free4 + len4 + buf1 = 9）=39
-  - 3.2时，可用str长度为： 64 - redisObject大小（16）- sdshdr8大小（free1 + len1 + buf1 +flag1 = 4）=44
-
-## 特殊数据结构
-
-### stream
-
-https://zhuanlan.zhihu.com/p/60501638
-
-### HyperLogLog 
-
--  HyperLogLog 是用来做基数统计的算法，HyperLogLog 的优点是，在输入元素的数量或者体积非常非常大时，计算基数所需的空间总是固定 的、并且是很小的。 
-- 操作命令
-  - pfadd key value 向set集合中添加一个元素
-  - pfcount key 计算set集合中元素个数(不重复)
-  - pfmerge key1 key2 ... 将n个集合聚合为一个
-- 适用场景
-  - 去重计数
-
-### 布隆过滤器
-
-- 安装
-  - 下载编译布隆过滤器 https://github.com/RedisLabsModules/redisbloom/
-  - redis配置文件指定加载布隆过滤器  loadmodule /usr/local/cluster/redisbloom/RedisBloom-1.1.1/rebloom.so  
-- 使用方式
-  - bf.add key value 向集合中添加值
-  - bf.exists  key value 判断值是否在集合中(不存在100%准确,存在近似100%准确)
-- 适用场景
-  - 重复值判断
-  - 缓存击穿问题
-  - 反垃圾邮件
-
-### bitMap位图
-
-- 使用方式
-
-  -  getbit key offset   用于获取Redis中指定key对应的值，中对应offset的bit 
-  -  setbit key offset value  用于修改指定key对应的值，中对应offset的bit 
-  -   bitcount key [start end]   用于统计字符串被设置为1的bit数 **(start和end是byte而不是bit !!!)**
-  -  bitop and/or/xor/not destkey key [key …]  用于对多个key求逻辑与/逻辑或/逻辑异或/逻辑非 
-
-- bitcout的陷阱
-
-  如果你有仔细看前文的用法，会发现有这么一个备注“返回一个指定key范围中的值为1的个数(是以byte为单位不是bit)”，这就是坑的所在。1byte = 8bit
-
-- 适用场景
-
-  - 用户的某个属性开关设置
-  - 用户在线状态
-  - 用户签到状态
-
-- bitmap和布隆过滤器比较
-
-  - 布隆过滤器不能确定一个值是否真的存在,而bitmap可以
-  - 布隆过滤器空间利用率比bitmap高,一个位可以代表多个值
-  - **布隆过滤器可以输入字符串,而bitmap必须转换为数值才可以.**
+# redis集群
 
 ## 缓存问题
 
@@ -438,11 +229,34 @@ Redis Cluster 中的每个节点都**维护一份自己视角下的当前整个�
     127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005
     ```
 
-### 一致性hash和hash槽
+
+
+### 一致性hash
+
+redis集群将所有数据切片成16384个hash槽位进行管理，某个key的数据会分布于其中某个槽位上，而一个实例上会有1到多个hash槽；这样做到目的有两个：1是使集群中的数据分布更加均匀，2是在集群扩缩容时数据的重新分配量更小
+
+### hash槽
+
+### 集群寻址
+
+客户端在连接到集群中某个redis实例时，实例会将redis集群槽位信息发送给客户端，客户端进行缓存。客户端在操作时会根据key做CRC16 hash运算得到key所属槽位信息；再根据槽位信息找到对应实例；
+
+实例之间会共享每个实例的槽位信息，这样每个实例就可以知道所有的槽位分布；当客户端发送一个key的槽位不在当前实例时，会向客户端返回MOVED命令，告诉客户端实际槽位所在的实例位置,此时客户端需要更新槽位信息；当集群正在扩缩容，槽位正在迁移期间，客户端接受到请求并且key已经迁移时，会向客户端发送ASK命令，告诉槽位指向的新实例位置，但是此时客户端不需要更新槽位信息（因为数据未完全迁移，旧实例上的key仍需要接受操作命令；
 
 ### 常用命令
 
-### 选举机制
+### 选举机制 - 哨兵模式
+
+redis选主
+
+redis主节点一开始启动时由配置指定，主节点宕机后由哨兵进行选择，选择规则为：
+
+1. 配置设置的优先级最高的节点优先；
+2. 同步offset最大的优先；
+3. runid最小的优先；
+4. 另外，网络不稳定的不参与选举（）
+
+哨兵选举
 
 ### 通信机制
 
