@@ -335,11 +335,7 @@
 
 #### 3.1.3.3 小结
 
-
-
 　　OK，看了 shouldParkAfterFailedAcquire() 和 parkAndCheckInterrupt()，现在让我们再回到 acquireQueued()，总结下该函数的具体流程：
-
-
 
 1. 结点进入队尾后，检查状态，找到安全休息点；
 2. 调用 park() 进入 waiting 状态，等待 unpark() 或 interrupt() 唤醒自己；

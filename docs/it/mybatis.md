@@ -75,7 +75,7 @@
 11. mybatis 逻辑分页和物理分页的区别是什么？
 
         - 逻辑分页,全部数据查到内存后再处理
-    
+        
         - 物理分页,直接使用limit关键字,在获取的时候就分页
 
 12. mybatis 是否支持延迟加载？延迟加载的原理是什么？
@@ -92,9 +92,9 @@
 14. mybatis 和 hibernate 的区别有哪些？
 
         1. hibernate是全自动，而mybatis是半自动（mybatis需要开发者编写sql语句，hibernate中封装了简单的增删改查可以不用编写操作数据库语句）
-    
+        
         2. hibernate数据库移植性远大于mybatis（由于mybatis中SQL语句是我们自己编写的，不同数据库的操作语句又不同所以使用mybatis时 更换数据库很麻烦，而hibernate会自动根据不同的数据库生成不同的操作语句）
-    
+        
         3. sql直接优化上，mybatis要比hibernate方便很多（mybatis是开发者编写的sql语句，优化上很方便，而hibernate是生成的sql无法直接优化，比较麻烦)
 
 15. mybatis 有哪些执行器（Executor）？
@@ -131,3 +131,149 @@
           - ParameterHandler (getParameterObject, setParameters)                     --获取、设置参数
           - ResultSetHandler (handleResultSets, handleOutputParameters)          --处理结果集
           - StatementHandler (prepare, parameterize, batch, update, query)          --记录sql
+
+### 源码解析
+
+#### 核心入口
+
+> DefaultSqlSessionFactory的openSessionFromDataSource方法描述了mybatis执行所需的核心类:
+>
+> - Configuration mybatis 数据源相关配置,在初始化流程中解析加载
+> - Executor 执行器,负责通过jdbc与db进行sql交互
+> - SqlSession 负责一次连接生命周期的维护
+> - Transaction 事务管理
+
+```java
+private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level, boolean autoCommit) {
+---
+        Environment environment = this.configuration.getEnvironment();
+        TransactionFactory transactionFactory = this.getTransactionFactoryFromEnvironment(environment);
+        tx = transactionFactory.newTransaction(environment.getDataSource(), level, autoCommit);
+        Executor executor = this.configuration.newExecutor(tx, execType);
+        var8 = new DefaultSqlSession(this.configuration, executor, autoCommit);
+---
+    return var8;
+}
+```
+
+#### 接口代理
+
+> 参考文章: https://blog.csdn.net/fajing_feiyue/article/details/106174131
+
+##### 包扫描
+
+> 通过@MapperScan引入MapperScannerRegistrar类
+>
+> 将这些接口的实现指向了MapperFactoryBean进行代理
+
+```java
+@MapperScan(basePackages = "xxx.mapper")
+
+@Import({MapperScannerRegistrar.class})
+@Repeatable(MapperScans.class)
+public @interface MapperScan {...}
+```
+
+> 将mapper加入spring bean定义扫描
+
+```java
+public class MapperScannerRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoaderAware {
+    void registerBeanDefinitions(AnnotationMetadata annoMeta, AnnotationAttributes annoAttrs, BeanDefinitionRegistry registry, String beanName) {
+        BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(MapperScannerConfigurer.class);
+        --- 
+ // 包扫描
+    basePackages.addAll((Collection)Arrays.stream(annoAttrs.getStringArray("basePackages")).filter(StringUtils::hasText).collect(Collectors.toList()));
+        --- 
+
+            builder.addPropertyValue("basePackage", StringUtils.collectionToCommaDelimitedString(basePackages));
+        // 将MapperScannerConfigurer注册到spring
+        registry.registerBeanDefinition(beanName, builder.getBeanDefinition());
+    }
+```
+
+> MapperScannerConfigurer【核心】将注册所有mapper的bean定义
+
+```java
+    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+        // 加载mybatis配置
+        if (this.processPropertyPlaceHolders) {
+            this.processPropertyPlaceHolders();
+        }
+		// ClassPathMapperScanner extends ClassPathBeanDefinitionScanner
+        ClassPathMapperScanner scanner = new ClassPathMapperScanner(registry);
+---
+        scanner.registerFilters();
+        // 这里将扫描mapper包下所有类
+        scanner.scan(StringUtils.tokenizeToStringArray(this.basePackage, ",; \t\n"));
+    }
+```
+
+> ClassPathBeanDefinitionScanner用于bean扫描,属于spring类
+
+```java
+public int scan(String... basePackages) {
+   int beanCountAtScanStart = this.registry.getBeanDefinitionCount();
+  // 调用子类ClassPathMapperScanner扫描包
+   doScan(basePackages);
+
+   // Register annotation config processors, if necessary.
+   if (this.includeAnnotationConfig) {
+      AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
+   }
+
+   return (this.registry.getBeanDefinitionCount() - beanCountAtScanStart);
+}
+
+```
+
+> ClassPathMapperScanner 核心处理类，扫描mapper包下所有接口，将这些接口的实现指向MapperFactoryBean进行代理
+
+```java
+public Set<BeanDefinitionHolder> doScan(String... basePackages) {
+    // 扫描所有bean定义
+    Set<BeanDefinitionHolder> beanDefinitions = super.doScan(basePackages);
+
+    if (beanDefinitions.isEmpty()) {
+        LOGGER.warn(() -> "No MyBatis mapper was found in '" + Arrays.toString(basePackages)
+                    + "' package. Please check your configuration.");
+    } else {
+        // 处理bean定义
+        processBeanDefinitions(beanDefinitions);
+    }
+}
+    
+private void processBeanDefinitions(Set<BeanDefinitionHolder> beanDefinitions) {
+    GenericBeanDefinition definition;
+    for (BeanDefinitionHolder holder : beanDefinitions) {
+        definition = (GenericBeanDefinition) holder.getBeanDefinition();
+        String beanClassName = definition.getBeanClassName();
+---
+        definition.getConstructorArgumentValues().addGenericArgumentValue(beanClassName); // issue #59
+        // 这里标注了该bean定义是哪个接口的实现类
+        //【核心】即将这些接口的实现指向了MapperFactoryBean进行代理
+        definition.setBeanClass(this.mapperFactoryBeanClass);
+---
+}
+```
+
+
+
+##### 代理实现
+
+> mybatis mapper动态代理实现类所在包为: org.apache.ibatis.binding; 核心类如下:
+>
+> - MapperMethod 对应Mapper中的每一个方法
+> - MapperProxy 对应一个接口的代理类
+> - MapperProxyFactory 用于生成所需mapper代理类
+> - MapperRegistry 映射注册类,用于管理(解析/保存)所有Mapper代理类
+
+
+
+##### Configuration类
+
+Configuration类是mybatis中最核心的配置类,里面保存了所有的配置,包括:mybatis-config.xml的全局配置、mapper.xml中的mapper配置、与SQL对应的statement,以及Mapper接口、代理类和他们的映射关系。核心变量包括：
+
+- MapperRegistry：保存Mapper接口和Mapper代理类的映射关系，以及Mapper代理类的具体实现
+- InterceptorChain： 存放所有插件
+- Map<String, MappedStatement> ： 存放所有statement（select、insert、update、delete语句）
+- 

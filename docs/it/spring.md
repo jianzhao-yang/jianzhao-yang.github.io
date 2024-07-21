@@ -31,7 +31,7 @@
   
     - prepareBeanFactory() **配置**beanFactory，并添加一些默认的beanPostProcessor
   
-    - postProcessBeanFactory() 由子类设置beanFactory创建后的**后置处理器**
+    - postProcessBeanFactory() 由子类设置beanFactory创建后的**后置处理器** 
   
     - invokeBeanFactoryPostProcessors() 执行这些系统的后置处理
   
@@ -105,6 +105,77 @@
 
 ## IOC
 
+Spring的IOC容器为我们完成了哪些工作? 或者说,我们使用容器的时候,它需要有哪些能力?
+
+我们用容器,肯定是为了让它帮我们管理创建出来的对象,使用5w1h分析:
+
+- why 为什么要交给容器进行管理? 为了更方便的进行对象管控,而不用我们手动管理
+- what 要把什么交给它管理? 可以重复
+- when
+- where
+- who
+- how
+
+基础能力: 
+
+- 读取配置,以便知道哪些类需要放到容器中进行管理
+- 
+- 能够管理所需的类,能够按需创建bean,能够缓存bean
+
+### 核心接口
+
+#### BeanDefinition
+
+> 用来描述bean的类,包含bean的class、是否单例、是否懒加载等信息
+
+#### BeanDefinitionRegistry
+
+> 用来盛放bean定义文件的注册表
+
+#### BeanFactory
+
+> 生产bean实例的工厂,因为要生产bean必须要有bean的元信息,所以也需要bean定义相关信息
+
+#### SingletonBeanRegistry
+
+> 因为单例bean全局只有一个,所以需要缓存起来重复使用
+
+### Environment
+
+> Environment就是程序启动时的外部环境,可以通过配置文件、启动参数等指定,主要包含: profile和properties,即项目启动环境和外部配置.
+
+### ApplicationContext
+
+#### PostProcessors
+
+
+##### BeanFactoryPostProcessor
+
+> 所有的bd已经全部加载完毕，然后可以对这些bd做一些属性的修改或者添加工作。
+
+##### BeanDefinitionRegistryPostProcessor
+
+> 该接口继承了BeanFactoryPostProcessor,所以是对它的一种扩展
+>
+> 所有常规bd已经加载完毕，然后可以再添加一些额外的bd。
+
+官网的建议是BeanDefinitionRegistryPostProcessor用来添加**额外的**bd，而BeanFactoryPostProcessor用来修改bd。
+
+##### BeanPostProcessor
+
+
+
+#### Awares
+
+BeanNameAware                   获得到容器中Bean的名称
+BeanFactoryAware                获得当前bean Factory,从而调用容器的服务
+ApplicationContextAware         当前的application context从而调用容器的服务
+MessageSourceAware              得到message source从而得到文本信息
+ApplicationEventPublisherAware  应用时间发布器,用于发布事件
+ResourceLoaderAware             获取资源加载器,可以获得外部资源文件
+
+##### Listeners
+
 ### Spring 循环依赖
 
 #### 三级缓存
@@ -124,7 +195,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 #### 为什么要有第三级缓存?
 
-- 三级缓存是为了判断循环依赖的时候，早期暴露出去已经被别人使用的 bean 和最终的 bean **是否是同一个 bean**，如果不是同一个则弹出异常，如果早期的对象没有被其他 bean 使用，而后期被修改了，不会产生异常，如果没有三级缓存，是无法判断是否有循环依赖，且早期的 bean 被循环依赖中的 bean 使用了。。
+- xxxxxxxxxx  //Java 代码实现public class RadixSort implements IArraySort {    @Override    public int[] sort(int[] sourceArray) throws Exception {        // 对 arr 进行拷贝，不改变参数内容        int[] arr = Arrays.copyOf(sourceArray, sourceArray.length);        int maxDigit = getMaxDigit(arr);        return radixSort(arr, maxDigit);    }    /**     * 获取最高位数     */    private int getMaxDigit(int[] arr) {        int maxValue = getMaxValue(arr);        return getNumLenght(maxValue);    }    private int getMaxValue(int[] arr) {        int maxValue = arr[0];        for (int value : arr) {            if (maxValue < value) {                maxValue = value;            }        }        return maxValue;    }    protected int getNumLenght(long num) {        if (num == 0) {            return 1;        }        int lenght = 0;        for (long temp = num; temp != 0; temp /= 10) {            lenght++;        }        return lenght;    }    private int[] radixSort(int[] arr, int maxDigit) {        int mod = 10;        int dev = 1;        for (int i = 0; i < maxDigit; i++, dev *= 10, mod *= 10) {            // 考虑负数的情况，这里扩展一倍队列数，其中 [0-9]对应负数，[10-19]对应正数 (bucket + 10)            int[][] counter = new int[mod * 2][0];            for (int j = 0; j < arr.length; j++) {                int bucket = ((arr[j] % mod) / dev) + mod;                counter[bucket] = arrayAppend(counter[bucket], arr[j]);            }            int pos = 0;            for (int[] bucket : counter) {                for (int value : bucket) {                    arr[pos++] = value;                }            }        }        return arr;    }    private int[] arrayAppend(int[] arr, int value) {        arr = Arrays.copyOf(arr, arr.length + 1);        arr[arr.length - 1] = value;        return arr;    }}java
 - 注:  BeanPostProcessor 可以修改bean的实际类型
 
 ### 依赖注入
@@ -144,7 +215,69 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 ## AOP
 
-- 
+### 代理的几种方式
+
+> 做代理要解决两个问题: 代理谁? 代理他们要做什么? 
+>
+> aspectj使用切面、连接点等概念很好的解决了代理谁的问题（代理谁√），但是静态代理不够灵活（怎么代理×）
+>
+> cglib的动态代理特性，以及相比jdk更高的性能，使得它能够更好的解决怎么代理的问题
+
+#### AspectJ静态代理
+
+> aspectj最大的好处就是定义了对代理类进行增强的类型和范围描述
+
+PointcutParser
+
+- parsePointcutExpression(expression) 就是解析描述表达式的入口
+- couldMatchJoinPointsInType(clazz) 类是否被匹配到
+- pointcutExpression.matchesMethodExecution(method).alwaysMatches()方法是否被匹配到
+
+
+
+#### JDK动态代理
+
+```java
+// 定义要代理的类所使用的加载器、要继承的接口、以及处理方法
+Proxy.newProxyInstance(this.getClass().getClassLoader(), interfaces, new InvocationHandler() {
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                // 可以在此添加各种处理
+                Object invoke = method.invoke(args);
+                
+                return invoke;
+    }
+})
+```
+
+
+
+#### ASM动态代理
+
+#### Cglib动态代理
+
+> 从cglib可以看到,所谓代理,就是对于object.method([]Object args),这个最简单的类似main方法的前后处理增强
+
+cglib的动态代理实现
+
+```java
+Enhancer enhancer = new Enhancer();
+enhancer.setSuperclass(Foo.class);
+enhancer.setInterfaces([]Interface.class);
+enhancer.setCallback(new MethodInterceptor() {
+    @Override
+    public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+                // 可以在此添加各种处理
+                Object invoke = method.invoke(args);
+                
+                return invoke;
+    }
+});
+```
+
+### AspectJAwareAdvisorAutoProxyCreator
+
+
 
 ## Spring 事务
 
@@ -155,10 +288,10 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 | PROPAGATION_REQUIRED      | required          | 如果当前没有事务，就新建一个事务，如果已经存在一个事务中，加入到这个事务中。这是最常见的选择。 |
 | PROPAGATION_SUPPORTS      | supports          | 支持当前事务，如果当前没有事务，就以非事务方式执行。         |
 | PROPAGATION_MANDATORY     | mandatory（强制） | 使用当前的事务，如果当前没有事务，就抛出**异常**。           |
-| PROPAGATION_REQUIRES_NEW  | requireds_new     | 新建事务，如果当前存在事务，把当前事务**挂起**。             |
+| PROPAGATION_REQUIRES_NEW  | requireds_new     | 新建事务，如果当前存在事务，把当前事务**挂起**。两个事务之间没有关联关系,互相不影响提交/回滚(新事务抛出异常被正确捕获的情况下). |
 | PROPAGATION_NOT_SUPPORTED | not_supported     | 以非事务方式执行操作，如果当前存在事务，就把当前事务**挂起**。 |
 | PROPAGATION_NEVER         | never             | 以非事务方式执行，如果当前存在事务，则抛出**异常**。         |
-| PROPAGATION_NESTED        | nested            | 如果当前存在事务，则在**嵌套**事务内执行。如果当前没有事务，则执行与PROPAGATION_REQUIRED类似的操作。 |
+| PROPAGATION_NESTED        | nested            | 如果当前存在事务，则在**嵌套**事务内执行。如果当前没有事务，则执行与PROPAGATION_REQUIRED类似的操作。**子事务需要跟父事务一同提交,但是子事务可以独立回滚** |
 
 ### 哪几种情况下事务会失效
 
@@ -175,5 +308,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 - 第二种：同时在a()上添加@Transactional注解或者在类上添加。
 - 第三种：在原A类中的a()方法，改为 **((A)AopContext.currentProxy).b()**
 
-## 
+### 事务可以解决重复插入的问题吗?
+
+- 看隔离级别,读已提交级别下的select+insert/update甚至有可能加重重复插入问题.
 

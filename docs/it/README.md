@@ -39,35 +39,35 @@
 
 ### java并发
 
-
 - ### [Synchronized](it/synchronized.md)
 
 ### JVM模型
 
 - ### [JVM](it/JVM.md)
-- 
-### GC
+- ### GC
 
 ### 诊断
-- #### [arthas-JVM诊断工具](https://alibaba.github.io/arthas/commands.html)
 
+- #### [arthas-JVM诊断工具](https://alibaba.github.io/arthas/commands.html)
 
 ## web框架
 
 ### spring
 
 - ### [Spring](it/spring.md)
-### springcloud
+
+  ### springcloud
 
 ### springcloud alibaba
-
 
 ## 数据库
 
 ### mybatis
+
 - ### [Mybatis](it/mybatis.md)
 
 ### mysql
+
 - ### [Mysql](it/mysql.md)
 
 ## 缓存
@@ -107,6 +107,9 @@
 
 ### rocketmq
 
+- [基础使用](https://www.cnblogs.com/boboooo/category/1779669.html)
+- [消息存储]()
+
 ## 设计思想
 
 - ### [DDD思想深入浅出讲解](https://zhuanlan.zhihu.com/p/366395817)
@@ -117,23 +120,16 @@
 
 ### k8s
 
-
-
 ## 面试
 
-- ### [个人总结面试题](it/interview-with-answer.md) 
+- ### [个人总结面试题](it/interview-with-answer.md)
 
-
-- ### [个人总结分布式面试题](it/distributed.md) 
-
+- ### [个人总结分布式面试题](it/distributed.md)
 
 - ### [平安产险面试题总结](it/pinganchanxian.md)
 
-
 - ### [阿里P7技术栈](it/ali-p7-stack.md)
 
-
 - ### [Java技术栈资料](it/another-java-stack.md)
-
 
 - ### [分布式和微服务的区别](it/difference-microserice.md)

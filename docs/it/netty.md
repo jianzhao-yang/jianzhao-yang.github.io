@@ -1,6 +1,126 @@
 # Netty
 
-## netty为何高性能
+在了解netty之前,必须先搞懂C语言socket编程和Linux epoll事件模型,否则会一直是一头雾水;
+
+https://github.com/yanfeizhang/coder-kung-fu
+
+# 概念
+
+https://mp.weixin.qq.com/s/DS52g3bibU9kNH75UFxGqA
+
+```java
+public final class EchoServer {
+ public static void main(String[] args) throws Exception {
+     EventLoopGroup bossGroup = new NioEventLoopGroup(1);// 只用来处理accept()
+     EventLoopGroup workerGroup = new NioEventLoopGroup();// 处理read(),write()及send(),recv()等
+     final EchoServerHandler serverHandler = new EchoServerHandler();
+
+     ServerBootstrap b = new ServerBootstrap();
+     b.group(bossGroup, workerGroup)
+         .channel(NioServerSocketChannel.class)
+         .option(ChannelOption.SO_BACKLOG, 100)
+         .handler(new LoggingHandler(LogLevel.INFO))
+         .childHandler(new ChannelInitializer<SocketChannel>() {
+             @Override
+             public void initChannel(SocketChannel ch) throws Exception {
+                 ChannelPipeline p = ch.pipeline();
+                 if (sslCtx != null) {
+                     p.addLast(sslCtx.newHandler(ch.alloc()));
+                 }
+                 p.addLast(serverHandler);
+             }
+         });
+
+     // bind(PORT)真正打开socket,开始bind()和listen()
+     ChannelFuture f = b.bind(PORT).sync();
+     ......
+ }
+}
+
+```
+
+
+
+## NioEventLoopGroup
+
+NioEventLoopGroup简化
+
+可以看到NioEventLoopGroup其实就是一个包装后的线程池;
+
+两个线程池:
+
+1. 主线程池只做socket编程流程中的accept步骤,即接受客户端连接;
+2. 从线程池做剩余的读、写等操作；
+3. 注意，它们只负责将客户端的连接和数据映射到本机内核，具体业务处理不是它们负责
+
+```java
+public class NioEventLoopGroup {
+    private final EventExecutor[] children;// 实际是NioEventLoop子类
+}
+```
+
+## NioEventLoop
+
+NioEventLoop是对整个多路复用操作的封装;
+
+```java
+public class NioEventLoop extend EventExecutor{
+    private Selector selector; // epoll等多路复用实现的封装
+    private SelectedSelectionKeySet selectedKeys;//待处理已就绪事件
+    private final Queue<Runnable> taskQueue;// 待处理任务
+    private volatile Thread thread;// 线程
+}
+```
+
+
+
+## Selector
+
+因为在不同平台,多路复用的实现不同,所以不能用一个统一的Selector实现类来代表,所以需要使用SelectorProvider来进行创建;
+
+selector就是epoll的封装;
+
+```java
+//file:java/nio/channels/spi/SelectorProvider.java
+public abstract class SelectorProvider {
+
+    public static SelectorProvider provider() {
+     // 1. java.nio.channels.spi.SelectorProvider 属性指定实现类
+        // 2. SPI 指定实现类
+        ......
+
+        // 3. 默认实现，Windows 和 Linux 下不同
+        provider = sun.nio.ch.DefaultSelectorProvider.create();
+        return provider;
+    }
+}
+// 注意: 此类在Linux和windows下不同
+//file:sun/nio/ch/DefaultSelectorProvider.java
+public class DefaultSelectorProvider {
+ public static SelectorProvider create() {
+        String osname = AccessController
+            .doPrivileged(new GetPropertyAction("os.name"));
+        if (osname.equals("Linux"))
+            return createProvider("sun.nio.ch.EPollSelectorProvider");
+    }
+
+}
+```
+
+## Channel
+
+channel是对socket的封装;
+
+```java
+public class NioServerSocketChannel{
+	private final ServerSocket socket;// 注意这里只是一个示例,实际上不是包含而是重新实现
+    private final DefaultChannelPipeline pipeline;// pipeline保存了使用者注册的在socket各个阶段进行的操作
+}
+```
+
+
+
+# netty为何高性能
 
 https://blog.csdn.net/qqq3117004957/article/details/106435076
 
